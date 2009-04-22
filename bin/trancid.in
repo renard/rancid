@@ -1,6 +1,6 @@
 #! @PERLV_PATH@
 ##
-## $Id: fnrancid.in,v 1.19 2008/02/08 09:54:16 heas Exp $
+## $Id: trancid.in,v 1.2 2009/02/07 08:15:17 asp Exp $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
@@ -39,14 +39,12 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-# 
-# A library built on Stephen Gill's Netscreen stuff to accomodate
-#  the Fortinet product line.  [d_pfleger@juniper.net]
 #
 #  RANCID - Really Awesome New Cisco confIg Differ
 #
-# usage: rancid [-dV] [-l] [-f filename | hostname]
+# usage: rancid [-dV] [-l] [-f filename | $host]
 #
+# Modified by Ed Ravin for Netopia.
 use Getopt::Std;
 getopts('dflV');
 if ($opt_V) {
@@ -55,22 +53,23 @@ if ($opt_V) {
 }
 $log = $opt_l;
 $debug = $opt_d;
-#$debug = 1;
 $file = $opt_f;
 $host = $ARGV[0];
+$clean_run = 0;
 $found_end = 0;
-$timeo = 90;				# nlogin timeout in seconds
+$found_version = 0;
+$found_env = 0;
+$found_diag = 0;
+$timeo = 90;			# clogin timeout in seconds
+$clogin_pgm= $ENV{'RANCID_CLOGIN'} || "tlogin";
 
-my(@commandtable, %commands, @commands);# command lists
-my($aclsort) = ("ipsort");		# ACL sorting mode
-my($filter_commstr);			# SNMP community string filtering
-my($filter_pwds);			# password filtering mode
+my(%filter_pwds);		# password filtering mode
 
 # This routine is used to print out the router configuration
 sub ProcessHistory {
-    my($new_hist_tag,$new_command,$command_string,@string) = (@_);
-    if ((($new_hist_tag ne $hist_tag) || ($new_command ne $command))
-	&& defined %history) {
+    my($new_hist_tag,$new_command,$command_string,@string)=(@_);
+    if((($new_hist_tag ne $hist_tag) || ($new_command ne $command))
+       && defined %history) {
 	print eval "$command \%history";
 	undef %history;
     }
@@ -92,10 +91,10 @@ sub ProcessHistory {
 
 sub numerically { $a <=> $b; }
 
-# This is a sort routine that will sort numerically on the
+# This is a sort routing that will sort numerically on the
 # keys of a hash as if it were a normal array.
 sub keynsort {
-    local(%lines) = @_;
+    local(%lines)=@_;
     local($i) = 0;
     local(@sorted_lines);
     foreach $key (sort numerically keys(%lines)) {
@@ -105,10 +104,10 @@ sub keynsort {
     @sorted_lines;
 }
 
-# This is a sort routine that will sort on the
+# This is a sort routing that will sort on the
 # keys of a hash as if it were a normal array.
 sub keysort {
-    local(%lines) = @_;
+    local(%lines)=@_;
     local($i) = 0;
     local(@sorted_lines);
     foreach $key (sort keys(%lines)) {
@@ -118,10 +117,10 @@ sub keysort {
     @sorted_lines;
 }
 
-# This is a sort routine that will sort on the
+# This is a sort routing that will sort on the
 # values of a hash as if it were a normal array.
 sub valsort{
-    local(%lines) = @_;
+    local(%lines)=@_;
     local($i) = 0;
     local(@sorted_lines);
     foreach $key (sort values %lines) {
@@ -131,9 +130,9 @@ sub valsort{
     @sorted_lines;
 }
 
-# This is a numerical sort routine (ascending).
+# This is a numerical sort routing (ascending).
 sub numsort {
-    local(%lines) = @_;
+    local(%lines)=@_;
     local($i) = 0;
     local(@sorted_lines);
     foreach $num (sort {$a <=> $b} keys %lines) {
@@ -147,7 +146,7 @@ sub numsort {
 # ip address when the ip address is anywhere in
 # the strings.
 sub ipsort {
-    local(%lines) = @_;
+    local(%lines)=@_;
     local($i) = 0;
     local(@sorted_lines);
     foreach $addr (sort sortbyipaddr keys %lines) {
@@ -160,79 +159,79 @@ sub ipsort {
 # These two routines will sort based upon IP addresses
 sub ipaddrval {
     my(@a) = ($_[0] =~ m#^(\d+)\.(\d+)\.(\d+)\.(\d+)$#);
-    $a[3] + 256 * ($a[2] + 256 * ($a[1] +256 * $a[0]));
+    $a[3]+256*($a[2]+256*($a[1]+256*$a[0]));
 }
 sub sortbyipaddr {
     &ipaddrval($a) <=> &ipaddrval($b);
 }
 
-# This routine parses "get system"
-sub GetSystem {
-    print STDERR "    In GetSystem: $_" if ($debug);
+# This routine parses "show version"
+sub ShowVersion {
+    print STDERR "    In ShowVersion: $_" if ($debug);
 
     while (<INPUT>) {
 	tr/\015//d;
-	next if /^\s*$/;
-	last if(/$prompt/);
-	ProcessHistory("","","","$_");
-	#print STDOUT "$_";
-    }
-    print STDOUT "Vendor: $vendor";
-    ProcessHistory("SYSTEM","","","\n");
-    return(0);
-}
+	if (/^$prompt/) { $found_version=1; last};
+	next if(/^(\s*|\s*$cmd\s*)$/);
+	return(1) if /(Invalid input detected|Type help or )/;
+	return(-1) if (/command authorization failed/i);
+	return(0) if ($found_version);		# Only do this routine once
 
-sub GetFile {
-    print STDERR "    In GetFile: $_" if ($debug);
-    while (<INPUT>) {
-	last if(/$prompt/);
-    }
-    ProcessHistory("FILE","","","\n");
-    return(0);
-}
+	# no pagers in Netopia-land, but shouldn't hurt
+	s/^<-+ More -+>\s*//;
 
-sub GetConf {
-    print STDERR "    In GetConf: $_" if ($debug);
-    while (<INPUT>) {
-	tr/\015//d;
-	next if /^\s*$/;
-	last if(/$prompt/);
-	if (/(^set.*)('Enc .*')(.*)/) {
-	    ProcessHistory("ENC","","","!$1 'Enc **encoding removed**' $3\n");
-	    next;
+### sample output:
+### #show version
+### cli      version:  01.00d00
+### firmware version:  05.03.09f06
+### hardware version:  01.00f00
+### mib      version:  01.00f00
+### html     version:  01.01d07
+
+	ProcessHistory("COMMENTS","keysort","A1","# $_");
 	}
-	ProcessHistory("","","","$_");
-	#print STDOUT "$_";
-    }
-    $found_end=1;
-    return(1);
+	
+    return(0);
 }
+
+sub ShowConfig {
+    print STDERR "    In ShowConfig: $_" if ($debug);
+
+    while (<INPUT>) {
+	tr/\015//d;
+	if (/^$prompt/) { $found_end=1; $clean_run=1; return 0};
+	next if(/^(\s*|\s*$cmd\s*)$/);
+	return(1) if /(Invalid input detected|Type help or )/;
+	return(-1) if (/command authorization failed/i);
+
+	# no pagers in Netopia-land, but shouldn't hurt
+	s/^<-+ More -+>\s*//;
+
+	# no post-processing needed - just file it
+	ProcessHistory("","","","$_");
+	}
+}
+
 
 # dummy function
 sub DoNothing {print STDOUT;}
 
 # Main
-@commandtable = (
-	{'get system status'	=> 'GetSystem'},
-	{'get conf'		=> 'GetConf'}
+@commandtable=(
+	{'show version'		=> "ShowVersion"},
+	{'show config'		=> "ShowConfig"},
 );
-# Use an array to preserve the order of the commands and a hash for mapping
-# commands to the subroutine and track commands that have been completed.
-@commands = map(keys(%$_), @commandtable);
-%commands = map(%$_, @commandtable);
+
+# Use array to preserve order of commands, and hash for mapping to subroutine
+my (%commands, @commands);
+foreach (@commandtable) {
+	push @commands, (keys(%{$_}))[0];
+	$commands{$commands[$#commands]}= (values(%{$_}))[0];
+};
 
 $cisco_cmds=join(";",@commands);
 $cmds_regexp=join("|",@commands);
 
-if (length($host) == 0) {
-    if ($file) {
-	print(STDERR "Too few arguments: file name required\n");
-	exit(1);
-    } else {
-	print(STDERR "Too few arguments: host name required\n");
-	exit(1);
-    }
-}
 open(OUTPUT,">$host.new") || die "Can't open $host.new for writing: $!\n";
 select(OUTPUT);
 # make OUTPUT unbuffered if debugging
@@ -241,28 +240,18 @@ if ($debug) { $| = 1; }
 if ($file) {
     print STDERR "opening file $host\n" if ($debug);
     print STDOUT "opening file $host\n" if ($log);
-    open(INPUT,"<$host") || die "open failed for $host: $!\n"; } else {
-    print STDERR "executing nlogin -t $timeo -c\"$cisco_cmds\" $host\n" if ($debug);
-    print STDOUT "executing nlogin -t $timeo -c\"$cisco_cmds\" $host\n" if ($log);
+    open(INPUT,"<$host") || die "open failed for $host: $!\n";
+} else {
+    print STDERR "executing $clogin_pgm -t $timeo -c\"$cisco_cmds\" $host\n" if ($debug);
+    print STDOUT "executing $clogin_pgm -t $timeo -c\"$cisco_cmds\" $host\n" if ($log);
     if (defined($ENV{NOPIPE})) {
-	system "nlogin -t $timeo -c \"$cisco_cmds\" $host </dev/null > $host.raw 2>&1" || die "nlogin failed for $host: $!\n";
-	open(INPUT, "< $host.raw") || die "nlogin failed for $host: $!\n";
+	system "$clogin_pgm -t $timeo -c \"$cisco_cmds\" $host </dev/null > $host.raw 2>&1" || die "$clogin_pgm failed for $host: $!\n";
+	open(INPUT, "< $host.raw") || die "$clogin_pgm failed for $host: $!\n";
     } else {
-	open(INPUT,"nlogin -t $timeo -c \"$cisco_cmds\" $host </dev/null |") || die "nlogin failed for $host: $!\n";
+	open(INPUT,"$clogin_pgm -t $timeo -c \"$cisco_cmds\" $host </dev/null |") || die "$clogin_pgm failed for $host: $!\n";
     }
 }
 
-# determine ACL sorting mode
-if ($ENV{"ACLSORT"} =~ /no/i) {
-    $aclsort = "";
-}
-# determine community string filtering mode
-if (defined($ENV{"NOCOMMSTR"}) &&
-    ($ENV{"NOCOMMSTR"} =~ /yes/i || $ENV{"NOCOMMSTR"} =~ /^$/)) {
-    $filter_commstr = 1;
-} else {
-    $filter_commstr = 0;
-}
 # determine password filtering mode
 if ($ENV{"FILTER_PWDS"} =~ /no/i) {
     $filter_pwds = 0;
@@ -272,25 +261,40 @@ if ($ENV{"FILTER_PWDS"} =~ /no/i) {
     $filter_pwds = 1;
 }
 
-ProcessHistory("","","","!RANCID-CONTENT-TYPE: fortigate\n\n");
+ProcessHistory("","","","#RANCID-CONTENT-TYPE: netopia\n#\n");
+ProcessHistory("COMMENTS","keysort","B0","#\n");
+ProcessHistory("COMMENTS","keysort","D0","#\n");
+ProcessHistory("COMMENTS","keysort","F0","#\n");
+ProcessHistory("COMMENTS","keysort","G0","#\n");
 TOP: while(<INPUT>) {
     tr/\015//d;
-    if (/^Error:/) {
-	print STDOUT ("$host nlogin error: $_");
-	print STDERR ("$host nlogin error: $_") if ($debug);
+    if (/[>#]\s?exit$/) {
+	$clean_run=1;
 	last;
     }
-    while (/>\s*($cmds_regexp)\s*$/) {
+    if (/^Error:/) {
+	print STDOUT ("$host $clogin_pgm error: $_");
+	print STDERR ("$host $clogin_pgm error: $_") if ($debug);
+	$clean_run=0;
+	last;
+    }
+    while (/#\s*($cmds_regexp)\s*$/) {
 	$cmd = $1;
-	if (!defined($prompt)) { $prompt = " >\s*"; }
+	if (!defined($prompt)) {
+	    $prompt = "#";  # crude but effective
+	    $prompt =~ s/([][}{)(\\])/\\$1/g;
+	    print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
+	}
 	print STDERR ("HIT COMMAND:$_") if ($debug);
-	if (!defined($commands{$cmd})) {
+	if (! defined($commands{$cmd})) {
 	    print STDERR "$host: found unexpected command - \"$cmd\"\n";
+	    $clean_run = 0;
 	    last TOP;
 	}
 	$rval = &{$commands{$cmd}};
 	delete($commands{$cmd});
 	if ($rval == -1) {
+	    $clean_run = 0;
 	    last TOP;
 	}
     }
@@ -307,13 +311,12 @@ if (defined($ENV{NOPIPE})) {
 }
 
 # check for completeness
-if (scalar(%commands) || !$found_end) {
+if (scalar(%commands) || !$clean_run || !$found_end) {
     if (scalar(%commands)) {
 	printf(STDOUT "$host: missed cmd(s): %s\n", join(',', keys(%commands)));
 	printf(STDERR "$host: missed cmd(s): %s\n", join(',', keys(%commands))) if ($debug);
     }
-    if (!$found_end) {
-	print STDOUT "$found_end: found end\n";
+    if (!$clean_run || !$found_end) {
 	print STDOUT "$host: End of run not found\n";
 	print STDERR "$host: End of run not found\n" if ($debug);
 	system("/usr/bin/tail -1 $host.new");

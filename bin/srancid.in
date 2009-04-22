@@ -1,9 +1,9 @@
 #! @PERLV_PATH@
 ##
-## $Id$
+## $Id: srancid.in,v 1.14 2008/12/12 23:45:21 heas Exp $
 ##
 ## @PACKAGE@ @VERSION@
-## Copyright (c) 1997-2007 by Terrapin Communications, Inc.
+## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## This code is derived from software contributed to and maintained by
@@ -211,6 +211,19 @@ sub ShowSys {
 
 	# Remove Uptime
 	/ Up time/ && next;
+
+	# filter temperature sensor info for Dell 6428 stacks
+	/Temperature Sensors:/ && next;
+	if (/Temperature \(Celsius\)/ &&
+	    ProcessHistory("COMMENTS","keysort","C1","! Unit\tStatus\n")) {
+	    while (<INPUT>) {
+		s/^\s+\015//g;
+		tr/\015//d;
+		/(\d+)\s+\d+\s+(.*)$/ &&
+		ProcessHistory("COMMENTS","keysort","C1","! $1\t$2\n");
+		/^\s*$/ && last;
+	    }
+	}
 
 	/system description: (.*)/i &&
 	    ProcessHistory("COMMENTS","keysort","A1", "!Chassis type: $1\n") &&

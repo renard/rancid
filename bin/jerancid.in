@@ -1,9 +1,9 @@
 #! @PERLV_PATH@
 ##
-## $Id$
+## $Id: jerancid.in,v 1.47 2009/03/04 19:11:55 heas Exp $
 ##
 ## @PACKAGE@ @VERSION@
-## Copyright (c) 1997-2007 by Terrapin Communications, Inc.
+## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## This code is derived from software contributed to and maintained by
@@ -293,6 +293,19 @@ sub DirSlotN {
 	# fail if the RP is amid the auto-sync process
 	return(-1) if (/active\/standby/i && /not sync/);
 
+	if (/(\S+:\s+)(\d+)(\s+)(\d+)(\s+)(\d+)/) {
+	    my($totlen) = length($2) - 1;
+	    my($tot) = $2 / (1024 * 1024);
+	    my($freelen) = length($4) - 1;
+	    my($free) = $4 / (1024 * 1024);
+	    my($usedlen) = length($6) - 1;
+	    my($used) = $6 / (1024 * 1024);
+	    my($fmt) = sprintf("%%-%dsK%s%%-%dsK%s%%-%dsK", $totlen, $3,
+			       $freelen, $5, $usedlen);
+
+	    ProcessHistory("FLASH","","","!Flash: $1" .
+			   sprintf($fmt, $tot, $free, $used));
+	}
 	ProcessHistory("FLASH","","","!Flash: $_");
     }
     ProcessHistory("","","","!\n");
@@ -427,6 +440,12 @@ sub WriteTerm {
 		ProcessHistory("","","","!$1 <removed>\n"); next;
 	    }
 	}
+	# mpls ldp encrypted password oscillates
+	if (/^(mpls ldp neighbor \S+ password)/) {
+	    if ($filter_pwds >= 1 || /^mpls ldp neighbor \S+ password \d /) {
+		ProcessHistory("","","","!$1 <removed>\n"); next;
+	    }
+	}
 
 	# sort ip explicit-paths.
 	if (/^ip explicit-path name (\S+)/) {
@@ -470,9 +489,9 @@ sub WriteTerm {
 	/^arp\s+(\d+\.\d+\.\d+\.\d+)\s+/ &&
 	    ProcessHistory("ARP","$aclsort","$1","$_") && next;
 
-	/^ip prefix-list\s+(\S+)\s+seq\s+(\d+)\s+(permit|deny)\s+(\d\S+)(\/.*)$/ &&
-	    ProcessHistory("PACL $1 $3","$aclsort","$4","ip prefix-list $1 $3 $4$5\n")
-	    && next;
+	/^ip prefix-list\s+(\S+)\s+seq\s+(\d+)\s+(permit|deny)\s+(\d\S+)(\/.*)$/
+	    && ProcessHistory("PACL $1 $3","$aclsort","$4",
+			      "ip prefix-list $1 $3 $4$5\n") && next;
 
 
 	# order/prune snmp-server host statements
