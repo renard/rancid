@@ -1,6 +1,6 @@
 #! /bin/sh
 ##
-## $Id: rancid-cvs.in,v 1.24 2008/05/22 19:40:30 heas Exp $
+## $Id: rancid-cvs.in 2096 2009-06-17 21:49:46Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
