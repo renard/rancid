@@ -1,7 +1,42 @@
-2.3.4
-	nracnid: fix serial number matching - Nathan Wallwork
+2.3.5
+	alogin: respond to active alarms msg at login - Vincent Tamet
 
-	nracnid: fix pager prompt filtering - Nathan Wallwork
+	*rancid: update for grammar deprecated in perl 5.12
+
+	*login: handle noenable value consistently, '1' to turn it on
+
+	configure: look for -n <count> option to ping, for Windows ping (over
+	cygwin) - From Lee
+
+	rancid: missed case fpr accepting '>' prompt, rather than just '#'
+
+	xrrancid: filter sequences from ipv4/6 access-lists
+
+	zrancid: force terminal type vt100 so as not to confuse Linux
+
+	francid: filter system uptime on new Brocades - Matthias Cramer
+
+	rancid: filter ASA time-based license noise - Christopher DeRemer
+
+	rancid: filter command in WriteTerm if echoed - Arjan Oosting
+
+	configure: specifically look for ping in /sbin & /usr/sbin & fix typo
+	in test operator
+
+	rancid: handle a few IOS serial number formatting variants - Aaron Rees
+
+	hpuifilter: change filtering to avoid use of string functions due to a
+	Debian bug.  Should be faster too.
+
+	rancid: adjust show inventory matches for variables WS - Aaron Rees
+
+	nxrancid: show environment clock and show core vdc-all are not valid
+	commands on all platforms - Ryan West
+
+2.3.4
+	nrancid: fix serial number matching - Nathan Wallwork
+
+	nrancid: fix pager prompt filtering - Nathan Wallwork
 
 	rancid: remove sequences from IPv6 prefix-lists
 

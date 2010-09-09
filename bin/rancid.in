@@ -1,6 +1,6 @@
 #! @PERLV_PATH@
 ##
-## $Id: rancid.in 2211 2010-07-07 23:15:10Z heas $
+## $Id: rancid.in 2246 2010-09-08 01:36:07Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2009 by Terrapin Communications, Inc.
@@ -73,7 +73,7 @@ my($filter_pwds);			# password filtering mode
 sub ProcessHistory {
     my($new_hist_tag,$new_command,$command_string,@string) = (@_);
     if ((($new_hist_tag ne $hist_tag) || ($new_command ne $command))
-	&& defined %history) {
+	&& scalar(%history)) {
 	print eval "$command \%history";
 	undef %history;
     }
@@ -203,6 +203,10 @@ sub ShowVersion {
 	    ProcessHistory("COMMENTS","keysort","F1", "!Image: $_") && next;
 	/^Cisco Secure PIX /i &&
 	    ProcessHistory("COMMENTS","keysort","F1", "!Image: $_") && next;
+	# ASA "time-based licenses" - eg: bot-net
+	/^This (PIX|platform) has a time-based license that will expire in\s+(\d{2,})\s+day.*$/ &&
+	    ProcessHistory("COMMENTS","keysort","D1",
+			   "!This $1 has a time-based license\n") && next;
 	# PIX 6 fail-over license, as in "This PIX has an Unrestricted (UR)
 	# license."  PIX 7 as "his platform has ..."
 	/^This (PIX|platform) has an?\s+(.*)$/ &&
@@ -226,8 +230,9 @@ sub ShowVersion {
 		"!CPU: $3\n");
 	    ProcessHistory("COMMENTS","keysort","B1", "!Memory: $2\n");
 	}
-	/^Serial Number:\s+(.*)$/ &&
-	    ProcessHistory("COMMENTS","keysort","C1", "!$_") && next;
+	/^serial number:\s+(.*)$/i &&
+	    ProcessHistory("COMMENTS","keysort","C1", "!Serial Number: $1") &&
+	    next;
 	# More PIX stuff
 	/^Encryption hardware device\s+:\s+(.*)/ &&
 	    ProcessHistory("COMMENTS","keysort","A3", "!Encryption: $1\n") &&
@@ -240,8 +245,8 @@ sub ShowVersion {
 	    ProcessHistory("COMMENTS","keysort","B2", "!Memory: Flash $2\n") &&
 	    next;
 	# CatOS 3500xl stuff
-	/^System serial number(:\s+.*)$/ &&
-	    ProcessHistory("COMMENTS","keysort","C1", "!Serial Number$1\n") &&
+	/^system serial number\s*:\s+(.*)$/i &&
+	    ProcessHistory("COMMENTS","keysort","C1", "!Serial Number: $1\n") &&
 	    next;
 	/^Model / &&
 	    ProcessHistory("COMMENTS","keysort","C2", "!$_") && next;
@@ -1325,7 +1330,7 @@ sub ShowInventory {
 	    next;
 	}
 	# split PID/VID/SN line
-	if (/^PID: (\S*)\s*, VID: (\S*)\s*, SN: (\S*)\s*$/) {
+	if (/^PID: (\S*)\s*,\s*VID: (\S*)\s*,\s*SN: (\S*)\s*$/) {
 	    my($entries) = "";
 	    $entries .= "!PID: $1\n" if ($1);
 	    $entries .= "!VID: $2\n" if ($2);
@@ -1528,6 +1533,7 @@ sub WriteTerm {
 	tr/\015//d;
 	last if (/^$prompt/);
 	return(1) if (!$linecnt && /^\s+\^\s*$/);
+	next if (/^\s*$cmd\s*$/);
 	return(1) if (/Line has invalid autocommand /);
 	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
 	return(1) if (/\%Error: No such file or directory/);
@@ -2003,7 +2009,7 @@ TOP: while(<INPUT>) {
 	$clean_run = 0;
 	last;
     }
-    while (/#\s*($cmds_regexp)\s*$/) {
+    while (/[>#]\s*($cmds_regexp)\s*$/) {
 	$cmd = $1;
 	if (!defined($prompt)) {
 	    $prompt = ($_ =~ /^([^#>]+[#>])/)[0];

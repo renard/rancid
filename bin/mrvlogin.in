@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: mrvlogin.in 2161 2010-03-15 21:17:28Z root $
+## $Id: mrvlogin.in 2245 2010-08-19 07:20:48Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2009 by Terrapin Communications, Inc.
@@ -640,7 +640,7 @@ foreach router [lrange $argv $i end] {
     }
 
     # look for noenable option in .cloginrc
-    if { [find noenable $router] != "" } {
+    if { [find noenable $router] == "1" } {
 	set enable 0
     }
 

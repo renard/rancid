@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: hlogin.in 2196 2010-04-27 17:47:16Z heas $
+## $Id: hlogin.in 2245 2010-08-19 07:20:48Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2009 by Terrapin Communications, Inc.
@@ -636,7 +636,7 @@ foreach router [lrange $argv $i end] {
     }
 
     # look for noenable option in .cloginrc
-    if { [find noenable $router] != "" } {
+    if { [find noenable $router] == "1" } {
 	set enable 0
     }
 
