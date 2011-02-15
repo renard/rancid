@@ -1,6 +1,6 @@
 #! @PERLV_PATH@
 ##
-## $Id: rancid.in 2246 2010-09-08 01:36:07Z heas $
+## $Id: rancid.in 2272 2011-01-10 20:01:58Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2009 by Terrapin Communications, Inc.
@@ -194,7 +194,7 @@ sub ShowVersion {
 	    next;
 	}
 	if (/cisco ios .* IOS-XE/i) { $ios = "XE"; }
-	if (/^Application and Content Networking Software/) { $type = "CE"; }
+	if (/^Application and Content Networking .*Software/) { $type = "CE"; }
 	# treat the ACE like the Content Engines for matching endofconfig
 	if (/^Cisco Application Control Software/) { $type = "CE"; }
 	if (/^Cisco Storage Area Networking Operating System/) { $type = "SAN";}
@@ -699,6 +699,7 @@ sub ShowFlash {
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	return(1) if ($type =~ /^(12[40]|7)/);
+	return(1) if ($ios eq "XE");
 	return(1) if (/^\s*\^\s*$/);
 	return(1) if (/Line has invalid autocommand /);
 	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
@@ -708,6 +709,9 @@ sub ShowFlash {
 	    my($len) = length($1);
 	    s/^$1\s{$len}//;
 	}
+
+	# Filter dhcp database
+	next if (/dhcp_[^. ]*\.txt/);
 
 	/\s+(multiple-fs|nv_hdr|vlan\.dat)$/ && next;
 	ProcessHistory("FLASH","","","!Flash: $_");
@@ -746,14 +750,22 @@ sub DirSlotN {
 	    next if (/uptime_cont\s*$/);
 	}
 	# Filter dhcp database
-	if (/dhcp_[^. ]*\.txt/) {
-	    next;
-	}
+	next if (/dhcp_[^. ]*\.txt/);
+
 	if ($ios eq "XE" && /.*\((\d+) bytes free\)/) {
-	    my($tmp) = int($1 / (1024 * 1024));
-	    s/$1 bytes free/$tmp MB free/;
+	    my($tmp) = $1;
+	    if ($tmp >= (1024 * 1024 * 1024)) {
+		$tmp = int($tmp / (1024 * 1024 * 1024));
+		s/$1 bytes free/$tmp GB free/;
+	    } else { 
+		$tmp = int($tmp / (1024 * 1024));
+		s/$1 bytes free/$tmp MB free/;
+	    }
 	}
 	if ($ios eq "XE" && /^((\s+)?\d+\s+\S+)\s+\d+.*(tracelogs$)/) {
+	    $_ = "$1" . sprintf("%43s", "") . "$3\n";
+	}
+	if ($ios eq "IOS" && /^((\s+)?\d+\s+\S+)\s+\d+.*(sflog$)/) {
 	    $_ = "$1" . sprintf("%43s", "") . "$3\n";
 	}
 	# the pager can not be disabled per-session on the PIX
@@ -1537,6 +1549,7 @@ sub WriteTerm {
 	return(1) if (/Line has invalid autocommand /);
 	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
 	return(1) if (/\%Error: No such file or directory/);
+	return(1) if (/(Open device \S+ failed|Error opening \S+:)/);
 	return(0) if ($found_end);		# Only do this routine once
 	return(-1) if (/command authorization failed/i);
 	return(-1) if (/% ?configuration buffer full/i);
@@ -1569,6 +1582,8 @@ sub WriteTerm {
 	    }
 	    tr/\015//d;
 	}
+	# skip ASA 5520 configuration author line
+	/^: written by /i && next;
 	# some versions have other crap mixed in with the bits in the
 	# block above
 	/^! (Last configuration|NVRAM config last)/ && next;
@@ -1631,6 +1646,8 @@ sub WriteTerm {
 	    }
 	    next;
 	}
+	# filter auto "rogue ap" configuration lines
+	/^rogue ap classify / && next;
 	if (/^( set session-key (in|out)bound ah \d+ )/ && $filter_pwds >= 1) {
 	    ProcessHistory("","","","!$1<removed>\n");
 	    next;

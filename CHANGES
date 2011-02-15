@@ -1,3 +1,39 @@
+2.3.6
+	rancid.spec: updated for 2.3.6 - from Florian Koch
+
+	rancid: fail on error opening nvram:
+
+	rancid: skip ASA 5520 configuration author line
+
+	control_rancid: for svn stupidity, run update (yes update) and commit
+	after setting svn:ignore, else . is out of date.
+
+	rancid: filter auto "rogue ap" configuration - Kevin Nesbitt
+
+	alogin: adjust match of active alarms msg at login
+
+	jrancid: patch for master/backup matching on EX series - Sven Engelhardt
+
+	rancid: update cisco WAE identity string match - from Jim Hock
+
+	{xr}rancid: summarize DirSlotN() bytes free as GB, else MB.
+
+	rancid: filter sflog from DirSlotN() for IOS on cisco 10k
+
+	fnrancid: update recent fortinet software - Diego Ercolani
+
+	rancid: ignore show flash on IOS XE - Marcus Stoegbauer
+
+	rancid: copy the dhcp database filter to ShowFlash() - From Lee
+
+	clogin: Fix pasto in IOS terminal width command.
+
+	hlogin: -r missing from usage o/p - Per-Olof Olsson
+
+	clogin: add -r and passphrase/identfile from cloginrc - Per-Olof Olsson
+
+	francid: remove system uptime line on CER 3000 - Simon Leinen
+
 2.3.5
 	alogin: respond to active alarms msg at login - Vincent Tamet
 

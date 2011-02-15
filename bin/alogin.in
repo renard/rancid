@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: alogin.in 2247 2010-09-08 23:03:38Z heas $
+## $Id: alogin.in 2268 2010-11-16 19:11:59Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2009 by Terrapin Communications, Inc.
@@ -110,6 +110,12 @@ for {set i 0} {$i < $argc} {incr i} {
 		incr i
 		set username [ lindex $argv $i ]
 	    }
+	# VTY Password
+	} -p* {
+	    # ignore -p
+	# ssh passphrase
+	} -r* {
+	    # ignore -r
 	# VTY Password
 	} -v* {
 	    if {! [  regexp .\[vV\](.+) $arg ignore passwd]} {
@@ -385,9 +391,8 @@ proc login { router user userpswd passwd prompt cmethod cyphertype } {
 	    send_user "\nError: host key mismatch for $router.  Update the SSH known_hosts file accordingly.\n"
 	    return 1
 	}
-	-re "NOTICE:.*- display now \(yes\/no\)\?" { 
+	-re "NOTICE:\[^\n\r]* - display now \[^\n\r]*:" { 
 	    send "no\r"
-	    send_user "\nNotice: Alarm message!\n"
 	    exp_continue
 	}
 	-re "$u_prompt"			{

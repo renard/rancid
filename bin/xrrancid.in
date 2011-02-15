@@ -1,6 +1,6 @@
 #! @PERLV_PATH@
 ##
-## $Id: xrrancid.in 2246 2010-09-08 01:36:07Z heas $
+## $Id: xrrancid.in 2264 2010-11-04 23:35:17Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) 1997-2010 by Terrapin Communications, Inc.
@@ -643,8 +643,14 @@ sub DirSlotN {
 	    next;
 	}
 	if (/.*\((\d+) bytes free\)/) {
-	    my($tmp) = int($1 / (1024 * 1024));
-	    s/$1 bytes free/$tmp MB free/;
+ 	    my($tmp) = $1;
+	    if ($tmp >= (1024 * 1024 * 1024)) {
+		$tmp = int($tmp / (1024 * 1024 * 1024));
+		s/$1 bytes free/$tmp GB free/;
+	    } else {
+		$tmp = int($tmp / (1024 * 1024));
+		s/$1 bytes free/$tmp MB free/;
+	    }
 	}
 
 	ProcessHistory("FLASH","","","!Flash: $dev: $_");
