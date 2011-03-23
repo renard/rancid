@@ -2,6 +2,12 @@ rancid (2:2.3.6-4) unstable; urgency=low
 
   * New automated build from: v2.3.6 - cded127
 
+ -- Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>  Wed, 23 Mar 2011 13:50:39 +0000
+
+rancid (2:2.3.6-4) unstable; urgency=low
+
+  * New automated build from: v2.3.6 - cded127
+
  -- Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>  Wed, 23 Mar 2011 13:38:55 +0000
 
 rancid (2:2.3.5-4) unstable; urgency=low
