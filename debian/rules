@@ -19,3 +19,7 @@ override_dh_install:
 		dh_install --sourcedir=debian/tmp -p$$p ; \
 		awk '{print "rm -rf debian/tmp/" $$1}' debian/$$p.install | sh ; \
 	done
+
+override_dh_clean:
+	dh_clean
+	rm -rf .pc
