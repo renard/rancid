@@ -1,0 +1,3 @@
+usr/share/rancid/bin/downreport  var/lib/rancid/downreport
+usr/share/rancid/bin/getipacctg  var/lib/rancid/getipacctg
+usr/share/rancid/bin/rtrfilter   var/lib/rancid/rtrfilter

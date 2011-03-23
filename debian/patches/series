@@ -1,0 +1,10 @@
+00_git_support.patch
+01_rancid_par.patch
+02_man_hyphen.patch
+03_diffstat.patch
+04_pixlogin.patch
+05_man_fixup.patch
+06_tmp_security.patch
+07_nrancid_bs_paging.patch
+08_hlogin_paging.patch
+09_svn.patch

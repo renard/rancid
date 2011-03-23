@@ -1,0 +1,28 @@
+diff --git a/bin/control_rancid.in b/bin/control_rancid.in
+index 8096244..149d1c2 100644
+--- a/bin/control_rancid.in
++++ b/bin/control_rancid.in
+@@ -202,6 +202,10 @@ esac
+ 
+ case $RCSSYS in
+     cvs | svn )
++	if [ $RCSSYS = svn ]
++	then
++		svn update
++	fi
+         # do cvs/svn update of router.db in case anyone has fiddled.
+        $RCSSYS update router.db > $TMP 2>&1
+        grep "^C" $TMP > /dev/null
+diff --git a/bin/rancid-cvs.in b/bin/rancid-cvs.in
+index 0e247c1..0f809f0 100644
+--- a/bin/rancid-cvs.in
++++ b/bin/rancid-cvs.in
+@@ -159,6 +159,8 @@ do
+ 		svn import -m "$GROUP" . file:///$CVSROOT/$GROUP
+ 		cd $BASEDIR
+ 		svn checkout file:///$CVSROOT/$GROUP $GROUP
++		cd $DIR
++		svn update
+ 		;;
+ 	    git )
+ 		cd $BASEDIR

@@ -1,0 +1,7 @@
+usr/bin/lg* usr/lib/cgi-bin/lg
+usr/share/rancid/lgnotes.html usr/lib/cgi-bin/lg
+etc/lg.conf etc/rancid/
+usr/share/man/man1/lg_intro.1
+usr/share/man/man5/lg.conf.5
+usr/share/rancid/lg.conf.sample
+usr/share/rancid/README.lg

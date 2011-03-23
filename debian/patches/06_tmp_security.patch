@@ -1,0 +1,151 @@
+diff --git a/bin/control_rancid.in b/bin/control_rancid.in
+index d3b018b..8096244 100644
+--- a/bin/control_rancid.in
++++ b/bin/control_rancid.in
+@@ -104,8 +104,9 @@ else
+     GROUP=$1
+ fi
+ DIR=$BASEDIR/$GROUP
+-TMP=${TMPDIR:=/tmp}/rancid.$GROUP.$$
+-trap 'rm -fr $TMP;' 1 2 15
++MYTMPDIR=`mktemp -d -t`
++TMP=$MYTMPDIR/rancid.$GROUP.$$
++trap 'rm -fr $MYTMPDIR;' 1 2 15
+ 
+ # disable noclobber
+ unset noclobber > /dev/null 2>&1
+@@ -208,7 +209,7 @@ case $RCSSYS in
+            echo "There were $RCSSYS conflicts during update."
+            echo ""
+            cat $TMP
+-           rm -f $TMP
++           rm -fr $MYTMPDIR
+            exit 1
+        fi
+        rm -f $TMP
+@@ -233,7 +234,7 @@ fi
+ # generate the list of all, up, & down routers
+ cd $DIR
+ trap 'rm -fr routers.db routers.all.new routers.down.new routers.up.new \
+-	routers.mail routers.added routers.deleted $TMP;' 1 2 15
++	routers.mail routers.added routers.deleted $MYTMPDIR;' 1 2 15
+ sed -e '/^#/d' -e 's/^ *//' -e 's/ *$//' -e 's/ *: */:/g' router.db |
+ 	tr '[A-Z]' '[a-z]' | sort -u > routers.db
+ cut -d: -f1,2 routers.db > routers.all.new
+@@ -359,7 +360,7 @@ if [ $? -ne 0 ] ; then
+     echo "Error: could not rename routers.up.new"
+ fi
+ rm -f routers.db
+-trap 'rm -fr $TMP;' 1 2 15
++trap 'rm -fr $MYTMPDIR;' 1 2 15
+ 
+ cd $DIR/configs
+ # check for 'up' routers missing in RCS.  no idea how this happens to some folks
+@@ -441,7 +442,7 @@ fi
+ 
+ # if a device (-r) was specified, see if that device is in this group
+ if [ "X$device" != "X" ] ; then
+-    trap 'rm -fr $TMP $DIR/routers.single;' 1 2 15
++    trap 'rm -fr $MYTMPDIR $DIR/routers.single;' 1 2 15
+     devlistfile="$DIR/routers.single"
+     grep -i "^$device:" routers.up > $devlistfile
+     if [ $? -eq 1 ] ; then
+@@ -539,7 +540,7 @@ fi
+ 
+ # This has been different for different machines...
+ # Diff the directory and then checkin.
+-trap 'rm -fr $TMP $TMP.diff $DIR/routers.single;' 1 2 15
++trap 'rm -fr $MYTMPDIR $DIR/routers.single;' 1 2 15
+ cd $DIR
+ case $RCSSYS in
+     cvs )
+@@ -606,5 +607,5 @@ if [ -s $DIR/routers.failed ] ; then
+ fi
+ 
+ # Cleanup
+-rm -f $TMP.diff $DIR/routers.single $DIR/routers.failed
++rm -fr $MYTMPDIR $DIR/routers.single $DIR/routers.failed
+ trap '' 1 2 15
+diff --git a/bin/rivlogin.in b/bin/rivlogin.in
+index fdbea39..9a3b779 100644
+--- a/bin/rivlogin.in
++++ b/bin/rivlogin.in
+@@ -64,7 +64,7 @@ set config   0
+ 
+ # in seconds to wait for data back from device
+ set timeoutdflt 10
+-set tempfile "/tmp/rivlogin.[exec date]"
++set tempfile "/var/lib/rancid/rivlogin.[exec date]"
+ 
+ # cli command prompt
+ set my_prompt    ">"
+diff --git a/man/rancid-run.1 b/man/rancid-run.1
+index 7a14daf..d87e29c 100644
+--- a/man/rancid-run.1
++++ b/man/rancid-run.1
+@@ -46,8 +46,7 @@ group by
+ The lock file will be named
+ .IR .<group>.run.lock
+ and will be located in
+-.IR $TMPDIR
+-(see below).
++.IR /var/lib/rancid . 
+ .PP
+ A log file is produced under
+ .IR $LOGDIR/logs
+@@ -115,7 +114,7 @@ Search path for utilities.
+ .\"
+ .TP
+ .B TMPDIR
+-Directory to hold temporary and lock files.
++Directory to hold temporary files.
+ .SH ERRORS
+ If rancid fails to run or collect a device's configuration, the particular
+ group's log file (mentioned above) should be consulted.  Any errors produced
+diff --git a/share/getipacctg b/share/getipacctg
+index 58576c7..03cc9f8 100644
+--- a/share/getipacctg
++++ b/share/getipacctg
+@@ -59,17 +59,19 @@
+ #
+ # Contributed to rancid by Steve Neighorn of SCN Reasearch.
+ 
+-TMP="/tmp/ipacct.$$.prefixes"
+-TMP2="/tmp/ipacct.$$.sorted"
+-TMP3="/tmp/ipacct.$$.pl"
+-
+ if [ $# -eq 0 ] ; then
+     echo "usage: getipacctg router_name [<number of lines off the top>] [<src/dest prefix filter> [...]]" >&2
+     exit 1;
+ fi
+ 
+-trap 'rm -fr /tmp/ipacct.$$ $TMP $TMP2 $TMP3;' 1 2 15
+-clogin -c 'show ip accounting' $1 > /tmp/ipacct.$$
++MYTMPDIR=`mktemp -t -d`
++TMP="$MYTMPDIR/ipacct.prefixes"
++TMP2="$MYTMPDIR/ipacct.sorted"
++TMP3="$MYTMPDIR/ipacct.pl"
++TMPIPACCT="$MYTMPDIR/ipacct"
++
++trap 'rm -fr $MYTMPDIR;' 1 2 15
++clogin -c 'show ip accounting' $1 > $TMPIPACCT
+ 
+ if [ $? -ne 0 ] ; then
+     echo "clogin failed." >&2
+@@ -90,7 +92,7 @@ while [ $# -ne 0 ] ; do
+ done
+ 6>&-
+ 
+-egrep '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ +[0-9]+\.[0-9]+\.' /tmp/ipacct.$$ | \
++egrep '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ +[0-9]+\.[0-9]+\.' $TMPIPACCT | \
+ 	sed -e 's/^ *//' -e 's/  */ /g' -e 's/.$//' | \
+ 	awk '{print $4":"$0;}' | sort -nr | \
+ 	sed -e 's/^[^:]*://' > $TMP2
+@@ -141,6 +143,6 @@ else
+     $HEAD $TMP2
+ fi
+ 
+-rm -fr /tmp/ipacct.$$ $TMP $TMP2 $TMP3
++rm -fr $MYTMPDIR
+ trap ';' 1 2 15
+ exit 0

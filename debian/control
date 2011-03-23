@@ -1,0 +1,53 @@
+Source: rancid
+Section: net
+Priority: optional
+Maintainer: Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
+Build-Depends: debhelper (>= 7.0.50), quilt (>= 0.46-7), perl,
+	 po-debconf, cdbs, expect, iputils-ping
+Standards-Version: 3.9.0
+Homepage: http://www.shrubbery.net/rancid/
+
+Package: rancid-util
+Architecture: all
+Depends: rancid-core
+Description: Utilities for rancid
+ This is a popular ISP toolkit, based on expect and shell scripts,
+ for managing router configurations.
+ Rancid monitors a router's (or device's) configuration, including
+ software and hardware (cards, serial numbers, etc), using CVS,
+ subversion or git.
+ Rancid currently supports Cisco routers, Juniper routers, Catalyst
+ switches, Foundry switches, Redback NASs, and ADC EZT3 muxes.
+ This is the util package, e.g. program that for some reasone they 
+ weren't putted in the "core" tree.
+ 
+Package: rancid-cgi
+Architecture: all
+Depends: rancid-util, liblockfile-simple-perl
+Suggests: apache2 | httpd-cgi
+Description: CGI for rancid
+ This is a popular ISP toolkit, based on expect and shell scripts,
+ for managing router configurations.
+ Rancid monitors a router's (or device's) configuration, including
+ software and hardware (cards, serial numbers, etc), using CVS,
+ subversion or git.
+ Rancid currently supports Cisco routers, Juniper routers, Catalyst
+ switches, Foundry switches, Redback NASs, and ADC EZT3 muxes.
+ This is the cgi package, a modified version of lg (Looking Glass)
+ provided from rancid team to check rancid through web interface too.
+
+Package: rancid-core
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, expect, perl,
+ git-core | cvs | subversion, passwd, openssh-client | ssh,
+ iputils-ping | ping, debconf (>= 0.2.26) | debconf-2.0, adduser
+Suggests: diffstat
+Description: rancid -- Really Awesome New Cisco confIg Differ
+ This is a popular ISP toolkit, based on expect and shell scripts,
+ for managing router configurations.
+ Rancid monitors a router's (or device's) configuration, including
+ software and hardware (cards, serial numbers, etc), using CVS,
+ subversion or git.
+ Rancid currently supports Cisco routers, Juniper routers, Catalyst
+ switches, Foundry switches, Redback NASs, and ADC EZT3 muxes.
+ This is the core package.

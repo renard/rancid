@@ -1,0 +1,20 @@
+diff --git a/bin/hlogin.in b/bin/hlogin.in
+index ebac635..54c5a0f 100644
+--- a/bin/hlogin.in
++++ b/bin/hlogin.in
+@@ -514,6 +514,7 @@ proc run_commands { prompt command } {
+ 
+     # Turn off the pager and escape regex meta characters in the $prompt
+     send "no page\r"
++    send "terminal length 0\r"
+     regsub -all {[)(]} $prompt {\\&} reprompt
+     regsub -all {^(.{1,11}).*([#>])$} $reprompt {\1([^#>\r\n]+)?[#>](\\([^)\\r\\n]+\\))?} reprompt
+     expect {
+@@ -771,6 +772,7 @@ foreach router [lrange $argv $i end] {
+     } elseif { $do_script } {
+ 	# disable the pager
+ 	send "no page\r"
++	send "terminal length 0\r"
+ 	expect -re $prompt	{}
+ 	source $sfile
+ 	catch {close};

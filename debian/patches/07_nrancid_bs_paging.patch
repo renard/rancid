@@ -1,0 +1,20 @@
+diff --git a/bin/nrancid.in b/bin/nrancid.in
+index 4164084..68361bf 100644
+--- a/bin/nrancid.in
++++ b/bin/nrancid.in
+@@ -173,6 +173,7 @@ sub GetSystem {
+ 
+     while (<INPUT>) {
+ 	tr/\015//d;
++	1 while s/[^[:cntrl:]]\cH//g;
+ 	next if /^\s*$/;
+ 	last if(/$prompt/);
+ 	# throw away the pager prompts
+@@ -211,6 +212,7 @@ sub GetConf {
+     print STDERR "    In GetConf: $_" if ($debug);
+     while (<INPUT>) {
+ 	tr/\015//d;
++	1 while s/[^[:cntrl:]]\cH//g;
+ 	next if /^\s*$/;
+ 	next if /^Total Config.+$/i;
+ 	last if(/$prompt/);

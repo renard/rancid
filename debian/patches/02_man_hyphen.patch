@@ -1,0 +1,113 @@
+diff --git a/man/clogin.1 b/man/clogin.1
+index 8e03fa9..46930ba 100644
+--- a/man/clogin.1
++++ b/man/clogin.1
+@@ -99,7 +99,7 @@ The command-line options are as follows:
+ .TP
+ .B \-S
+ Save the configuration on exit, if the device prompts at logout time.
+-This only has affect when used with -s.
++This only has affect when used with \-s.
+ .TP
+ .B \-V
+ Prints package name and version strings.
+@@ -272,7 +272,7 @@ but it has no concept of an "enabled" privilege level.  You must
+ set autoenable for these devices in your
+ .IR .cloginrc .
+ .PP
+-The -S option is a recent addition, it may not be supported in all of the
++The \-S option is a recent addition, it may not be supported in all of the
+ login scripts or for every target device.
+ .\"
+ .SH BUGS
+diff --git a/man/cloginrc.5 b/man/cloginrc.5
+index 95e5faa..3f8bada 100644
+--- a/man/cloginrc.5
++++ b/man/cloginrc.5
+@@ -152,13 +152,13 @@ port differently.  In particular, BSD derived telnets do not do
+ option negotiation when a port is given.  Some devices, Extreme
+ switches for example, have undesirable telnet default options such
+ as linemode.  In the BSD case, to enable option negotiation when
+-specifying a port the method should be "{telnet:-23}" or you should
++specifying a port the method should be "{telnet:\-23}" or you should
+ add "mode character" to .telnetrc.  See
+ .BR telnet (1)
+ for more information on telnet command-line syntax, telnet options,
+ and .telnetrc.
+ .sp
+-Example: add method * {ssh} {telnet:-3000} {rsh}
++Example: add method * {ssh} {telnet:\-3000} {rsh}
+ .sp
+ Which would cause
+ .IR clogin
+@@ -176,7 +176,7 @@ Default: {telnet} {ssh}
+ will not try to gain enable privileges when noenable is matched for a
+ device.  This is equivalent to
+ .IR "clogin" 's
+--noenable command-line option.
++\-noenable command-line option.
+ .sp
+ Note that this directive is meaningless for
+ .BR jlogin (1),
+diff --git a/man/par.1 b/man/par.1
+index 2280c89..aac2cc9 100644
+--- a/man/par.1
++++ b/man/par.1
+@@ -29,7 +29,7 @@ option was specified, in which case it operates as if the argument to
+ had followed a colon on the first line.
+ .PP
+ In each of the cases where the lines of the file following the first are
+-not commands (i.e.: colon or -c), instances of open-close braces ({}) in the
++not commands (i.e.: colon or \-c), instances of open-close braces ({}) in the
+ command will be replaced by these values.
+ .PP
+ For example, a inputfile whose contents is:
+@@ -46,7 +46,7 @@ run with
+ .B rancid_par
+ like so:
+ .sp
+-	%rancid_par -q inputfile
++	%rancid_par \-q inputfile
+ .sp
+ will produce the following output (order will vary):
+ .sp
+@@ -70,7 +70,7 @@ Print debugging information on standard error (stderr).
+ .\"
+ .TP
+ .B \-f
+-No file or STDIN, just run a quantity of the command specified with -c.
++No file or STDIN, just run a quantity of the command specified with \-c.
+ .\"
+ .TP
+ .B \-i
+diff --git a/man/rancid_intro.1 b/man/rancid_intro.1
+index bb073a2..3f9447b 100644
+--- a/man/rancid_intro.1
++++ b/man/rancid_intro.1
+@@ -67,6 +67,7 @@ rancid's share directory (
+ Below is a sample of a uni-diff produced from the group "shrubbery"
+ for the device named dfw.shrubbery.net, which happens to be a Cisco GSR.
+ .PP
++.ft CW
+ .nf
+ From: rancid 
+ To: rancid-shrubbery@shrubbery.net
+@@ -76,8 +77,8 @@ Precedence: bulk
+ Index: configs/dfw.shrubbery.net
+ ===================================================================
+ retrieving revision 1.144
+-diff -u -4 -r1.144 dfw.shrubbery.net
+-@@ -57,14 +57,8 @@
++diff \-u \-4 \-r1.144 dfw.shrubbery.net
++@@ \-57,14 +57,8 @@
+   !Slot 2/MBUS: hvers 1.1
+   !Slot 2/MBUS: software 01.36 (RAM) (ROM version is 01.33)
+   !Slot 2/MBUS: 128 Mbytes DRAM, 16384 Kbytes SDRAM
+@@ -92,6 +93,7 @@ diff -u -4 -r1.144 dfw.shrubbery.net
+   !Slot 7/PCA: part 73-2170-03 rev B0 ver 3, serial CAB024901SI
+   !Slot 7/PCA: hvers 1.4
+   !Slot 7/MBUS: part 73-2146-06 rev A0 dev 0, serial CAB02060044
++.ft R
+ .fi
+ .PP
+ In this example, we see that a Gigabit Ethernet linecard was removed

@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+%:
+	dh --with quilt $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- --bindir=/usr/lib/rancid/bin
+
+override_dh_auto_install:
+	dh_auto_install
+	mv debian/tmp/usr/lib/rancid/bin/par debian/tmp/usr/lib/rancid/bin/rancid_par
+	mv debian/tmp/usr/share/man/man1/par.1 debian/tmp/usr/share/man/man1/rancid_par.1
+
+# This trick allow to emulate `dh_movefiles' usinf `dh_install'
+# Note: "--sourcedir=debian/tmp" prevent `dh_install' from copying files from
+# the source root directory.
+override_dh_install:
+	for p in `dh_listpackages`; do \
+		dh_install --sourcedir=debian/tmp -p$$p ; \
+		awk '{print "rm -rf debian/tmp/" $$1}' debian/$$p.install | sh ; \
+	done
