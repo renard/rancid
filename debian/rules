@@ -23,3 +23,7 @@ override_dh_install:
 override_dh_clean:
 	dh_clean
 	rm -rf .pc
+
+# do nothing
+override_dh_auto_test:
+
