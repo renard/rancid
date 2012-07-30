@@ -11,3 +11,12 @@ index 398d0dd..9cd77cc 100644
  PATH=@bindir@:@ENV_PATH@; export PATH
  # Location of the CVS/SVN repository.  Be careful changing this.
  # If RCSSYS is svn, this can be:
+@@ -39,7 +39,7 @@ LOGDIR=$BASEDIR/logs; export LOGDIR
+ # Select which RCS system to use, "cvs" (default) or "svn".  Do not change
+ # this after CVSROOT has been created with rancid-cvs.  Changing between these
+ # requires manual conversions.
+-RCSSYS=@RCSSYS@; export RCSSYS
++RCSSYS=git; export RCSSYS
+ #
+ # if ACLSORT is NO, access-lists will NOT be sorted.
+ #ACLSORT=YES; export ACLSORT
