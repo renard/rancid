@@ -482,21 +482,3 @@ index a98e70b..a2908e4
 +	esac
      fi
  done
-diff --git a/etc/rancid.conf.sample.in b/etc/rancid.conf.sample.in
-index 398d0dd..1bba89f 100644
---- a/etc/rancid.conf.sample.in
-+++ b/etc/rancid.conf.sample.in
-@@ -35,10 +35,9 @@ PATH=@bindir@:@ENV_PATH@; export PATH
- CVSROOT=$BASEDIR/CVS; export CVSROOT
- # Location of log files produced by rancid-run(1).
- LOGDIR=$BASEDIR/logs; export LOGDIR
--#
--# Select which RCS system to use, "cvs" (default) or "svn".  Do not change
--# this after CVSROOT has been created with rancid-cvs.  Changing between these
--# requires manual conversions.
-+# Select which RCS system to use, "cvs" (default), "svn" or "git".  Do
-+# not change this after CVSROOT has been created with rancid-cvs.
-+# Changing between these requires manual conversions.
- RCSSYS=@RCSSYS@; export RCSSYS
- #
- # if ACLSORT is NO, access-lists will NOT be sorted.
