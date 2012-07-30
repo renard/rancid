@@ -327,14 +327,14 @@ diff --git a/bin/rancid-cvs.in b/bin/rancid-cvs.in
 old mode 100644
 new mode 100755
 index a98e70b..a2908e4
+--- a/bin/rancid-cvs.in
++++ b/bin/rancid-cvs.in
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#! /bin/bash
  ##
  ## $Id: rancid-cvs.in 2340 2011-11-29 22:30:30Z heas $
  ##
---- a/bin/rancid-cvs.in
-+++ b/bin/rancid-cvs.in
 @@ -87,27 +87,45 @@ cd $BASEDIR
  
  # RCS system
