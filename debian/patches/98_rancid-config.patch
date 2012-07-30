@@ -1,5 +1,5 @@
 diff --git a/etc/rancid.conf.sample.in b/etc/rancid.conf.sample.in
-index 398d0dd..9cd77cc 100644
+index 398d0dd..9080dcd 100644
 --- a/etc/rancid.conf.sample.in
 +++ b/etc/rancid.conf.sample.in
 @@ -22,7 +22,7 @@ umask 027
