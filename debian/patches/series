@@ -9,4 +9,5 @@
 11_man_typo.patch
 12_MAILPLUS.patch
 13_CFLAGS.patch
+98_rancid-config.patch
 99_git_support.patch

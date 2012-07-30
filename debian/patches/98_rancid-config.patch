@@ -1,0 +1,13 @@
+diff --git a/etc/rancid.conf.sample.in b/etc/rancid.conf.sample.in
+index 398d0dd..9cd77cc 100644
+--- a/etc/rancid.conf.sample.in
++++ b/etc/rancid.conf.sample.in
+@@ -22,6 +22,6 @@ umask 027
+ TMPDIR=/tmp; export TMPDIR
+ # Be careful changing this, it affects CVSROOT below.  It should be a FQPN, not
+ # relative.
+-BASEDIR=@localstatedir@; export BASEDIR
++BASEDIR=@localstatedir@/lib/rancid; export BASEDIR
+ PATH=@bindir@:@ENV_PATH@; export PATH
+ # Location of the CVS/SVN repository.  Be careful changing this.
+ # If RCSSYS is svn, this can be:
