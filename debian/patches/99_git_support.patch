@@ -270,7 +270,7 @@ index d11b6c3..c663625
  
  	if [ ! -s $router.new ]
  	then
-@@ -451,12 +531,33 @@ done
+@@ -451,12 +531,34 @@ done
  # Diff the directory and then checkin.
  trap 'rm -fr $MYTMPDIR $DIR/routers.single;' 1 2 15
  cd $DIR
@@ -280,6 +280,7 @@ index d11b6c3..c663625
 -else
 -    svn diff | sed -e '/^+++ /d' -e 's/^\([-+ ]\)/\1 /' >$TMP.diff
 -fi
++message="updates of group $GROUP"
 +case $RCSSYS in
 +    cvs )
 +        cvs -f @DIFF_CMD@ -ko | sed -e '/^RCS file: /d' -e '/^--- /d' \
