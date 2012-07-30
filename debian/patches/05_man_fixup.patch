@@ -1,8 +1,9 @@
-diff --git a/man/clogin.1 b/man/clogin.1
-index 46930ba..66642c9 100644
+Author: Roland Rosenfeld <roland@debian.org>
+Description: Comment out unknown commands .El, .Bl, and .ID in man pages.
+
 --- a/man/clogin.1
 +++ b/man/clogin.1
-@@ -209,7 +209,7 @@ Specifies the encryption algorithm for use with the
+@@ -212,7 +212,7 @@
  \-c option.  The default encryption type is often not supported.  See the
  .BR ssh (1)
  man page for details.  The default is 3des.
@@ -11,7 +12,7 @@ index 46930ba..66642c9 100644
  .\"
  .SH RETURNS
  If the login script fails for any of the devices on the command-line, the
-@@ -250,7 +250,7 @@ HOME is used by
+@@ -253,7 +253,7 @@
  to locate the
  .IR .cloginrc
  configuration file.
@@ -20,11 +21,9 @@ index 46930ba..66642c9 100644
  .SH FILES
  .ta \w'xHOME/xcloginrc  'u 
  \fI$HOME/.cloginrc\fR   Configuration file.
-diff --git a/man/cloginrc.5 b/man/cloginrc.5
-index 3f8bada..815b0d5 100644
 --- a/man/cloginrc.5
 +++ b/man/cloginrc.5
-@@ -287,7 +287,7 @@ file that is shared among a group of folks.
+@@ -287,7 +287,7 @@
  If <file> is not a full pathname, $HOME/ will be prepended.
  .sp
  Example: include {.cloginrc.group}
@@ -33,11 +32,9 @@ index 3f8bada..815b0d5 100644
  .SH FILES
  .br
  .nf
-diff --git a/man/lg.conf.5.in b/man/lg.conf.5.in
-index 6e9f86c..d1e9198 100644
 --- a/man/lg.conf.5.in
 +++ b/man/lg.conf.5.in
-@@ -14,7 +14,7 @@ resources.
+@@ -14,7 +14,7 @@
  .\"
  .SH VARIABLES
  The following variables are used (alphabetically):
@@ -46,7 +43,7 @@ index 6e9f86c..d1e9198 100644
  .\"
  .TP
  .B LG_AS_REG
-@@ -135,10 +135,10 @@ note that it must include $BASEDIR/bin (see above).
+@@ -135,10 +135,10 @@
  .TP
  Queries		...................................
  .\"
@@ -59,7 +56,7 @@ index 6e9f86c..d1e9198 100644
  .TP
  .B LG_CONF
  Location of
-@@ -146,7 +146,7 @@ Location of
+@@ -146,7 +146,7 @@
  file.  See the
  .IR FILES
  section for more information.
@@ -68,7 +65,7 @@ index 6e9f86c..d1e9198 100644
  .\"
  .SH ERRORS
  .B lg.conf
-@@ -155,7 +155,7 @@ is interpreted directly by
+@@ -155,7 +155,7 @@
  so its syntax follows that of perl.  Syntax errors may produce quite unexpected
  results.
  .SH FILES
@@ -77,7 +74,7 @@ index 6e9f86c..d1e9198 100644
  .TP
  .B @sysconfdir@/lg.conf
  Configuration file described here.
-@@ -164,7 +164,7 @@ Configuration file described here.
+@@ -164,7 +164,7 @@
  is located by the value of the environment variable LG_CONF, in the CWD
  (current working directory), or the sysconfdir defined when rancid was
  installed, in that order.
@@ -86,24 +83,20 @@ index 6e9f86c..d1e9198 100644
  .SH "SEE ALSO"
  .BR cloginrc (5),
  .BR lg_intro (1),
-diff --git a/man/par.1 b/man/par.1
-index aac2cc9..7038807 100644
 --- a/man/par.1
 +++ b/man/par.1
-@@ -106,7 +106,7 @@ options and the option appearing last will take precedence.
+@@ -106,7 +106,7 @@
  .B \-x
- View rancid_par logs in real-time via an 
+ View rancid_par logs in real-time via an
  .BR xterm (1).
 -.El
 +.\".El
  .SH FILES
  .br
  .nf
-diff --git a/man/rancid-run.1 b/man/rancid-run.1
-index 302bc72..7a14daf 100644
 --- a/man/rancid-run.1
 +++ b/man/rancid-run.1
-@@ -131,7 +131,7 @@ device with 'clogin hostname', and so on.
+@@ -131,7 +131,7 @@
  .B $BASEDIR/etc/rancid.conf
  .B rancid-run
  configuration file.
@@ -112,11 +105,20 @@ index 302bc72..7a14daf 100644
  .SH "SEE ALSO"
  .BR control_rancid (1),
  .BR rancid.conf (5),
-diff --git a/man/rancid.conf.5.in b/man/rancid.conf.5.in
-index 69189dd..f6ca762 100644
+--- a/man/rancid.1
++++ b/man/rancid.1
+@@ -148,7 +148,7 @@
+ from rancid.
+ If this file's name ('ip dhcp database') matches the regex
+ dhcp_[^[:space:].]\.txt, it will be filtered.
+-.Pp
++.PP
+ For Catalyst switches running CatOS, type
+ .B cat5,
+ the prompt must end with '>'.
 --- a/man/rancid.conf.5.in
 +++ b/man/rancid.conf.5.in
-@@ -26,7 +26,7 @@ effect their run-time behavior or to enable them to find their resources.
+@@ -26,7 +26,7 @@
  .SH VARIABLES
  The following variables are used (listed alphabetically):
  .PP
@@ -125,7 +127,7 @@ index 69189dd..f6ca762 100644
  .\"
  .TP
  .B ACLSORT
-@@ -252,11 +252,11 @@ is interpreted directly by
+@@ -252,11 +252,11 @@
  so its syntax follows that of the bourne shell.  Errors
  may produce quite unexpected results.
  .SH FILES
@@ -139,11 +141,9 @@ index 69189dd..f6ca762 100644
  .\"
  .SH "SEE ALSO"
  .BR control_rancid (1),
-diff --git a/man/router.db.5 b/man/router.db.5
-index 63c93aa..adc55d1 100644
 --- a/man/router.db.5
 +++ b/man/router.db.5
-@@ -48,132 +48,132 @@ Domain Name) works best, as in the example above.
+@@ -48,97 +48,97 @@
  The type of device from the set:
  .RS 8n
  .TP
@@ -262,6 +262,7 @@ index 63c93aa..adc55d1 100644
  .B juniper
  A Juniper router.
  .TP
+@@ -148,35 +148,35 @@
  .B mrtd
  A host running the (Merit) MRTd daemon.
  .TP
@@ -305,7 +306,7 @@ index 63c93aa..adc55d1 100644
  .B zebra
  Zebra routing software.
  .RE
-@@ -223,7 +223,7 @@ Configuration file described here, where <group> is a device group name
+@@ -226,7 +226,7 @@
  defined in the variable
  .I LIST_OF_GROUPS
  within \fI$BASEDIR/etc/rancid.conf\fR.

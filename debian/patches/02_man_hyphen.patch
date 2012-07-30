@@ -1,8 +1,9 @@
-diff --git a/man/clogin.1 b/man/clogin.1
-index 8e03fa9..46930ba 100644
+Author: Roland Rosenfeld <roland@debian.org>
+Description: Fix hyphens used as minus signs in several man pages.
+
 --- a/man/clogin.1
 +++ b/man/clogin.1
-@@ -99,7 +99,7 @@ The command-line options are as follows:
+@@ -102,7 +102,7 @@
  .TP
  .B \-S
  Save the configuration on exit, if the device prompts at logout time.
@@ -11,7 +12,7 @@ index 8e03fa9..46930ba 100644
  .TP
  .B \-V
  Prints package name and version strings.
-@@ -272,7 +272,7 @@ but it has no concept of an "enabled" privilege level.  You must
+@@ -275,7 +275,7 @@
  set autoenable for these devices in your
  .IR .cloginrc .
  .PP
@@ -20,11 +21,9 @@ index 8e03fa9..46930ba 100644
  login scripts or for every target device.
  .\"
  .SH BUGS
-diff --git a/man/cloginrc.5 b/man/cloginrc.5
-index 95e5faa..3f8bada 100644
 --- a/man/cloginrc.5
 +++ b/man/cloginrc.5
-@@ -152,13 +152,13 @@ port differently.  In particular, BSD derived telnets do not do
+@@ -152,13 +152,13 @@
  option negotiation when a port is given.  Some devices, Extreme
  switches for example, have undesirable telnet default options such
  as linemode.  In the BSD case, to enable option negotiation when
@@ -40,7 +39,7 @@ index 95e5faa..3f8bada 100644
  .sp
  Which would cause
  .IR clogin
-@@ -176,7 +176,7 @@ Default: {telnet} {ssh}
+@@ -176,7 +176,7 @@
  will not try to gain enable privileges when noenable is matched for a
  device.  This is equivalent to
  .IR "clogin" 's
@@ -49,11 +48,9 @@ index 95e5faa..3f8bada 100644
  .sp
  Note that this directive is meaningless for
  .BR jlogin (1),
-diff --git a/man/par.1 b/man/par.1
-index 2280c89..aac2cc9 100644
 --- a/man/par.1
 +++ b/man/par.1
-@@ -29,7 +29,7 @@ option was specified, in which case it operates as if the argument to
+@@ -29,7 +29,7 @@
  had followed a colon on the first line.
  .PP
  In each of the cases where the lines of the file following the first are
@@ -62,7 +59,7 @@ index 2280c89..aac2cc9 100644
  command will be replaced by these values.
  .PP
  For example, a inputfile whose contents is:
-@@ -46,7 +46,7 @@ run with
+@@ -46,7 +46,7 @@
  .B rancid_par
  like so:
  .sp
@@ -71,7 +68,7 @@ index 2280c89..aac2cc9 100644
  .sp
  will produce the following output (order will vary):
  .sp
-@@ -70,7 +70,7 @@ Print debugging information on standard error (stderr).
+@@ -70,7 +70,7 @@
  .\"
  .TP
  .B \-f
@@ -80,11 +77,9 @@ index 2280c89..aac2cc9 100644
  .\"
  .TP
  .B \-i
-diff --git a/man/rancid_intro.1 b/man/rancid_intro.1
-index bb073a2..3f9447b 100644
 --- a/man/rancid_intro.1
 +++ b/man/rancid_intro.1
-@@ -67,6 +67,7 @@ rancid's share directory (
+@@ -67,6 +67,7 @@
  Below is a sample of a uni-diff produced from the group "shrubbery"
  for the device named dfw.shrubbery.net, which happens to be a Cisco GSR.
  .PP
@@ -92,7 +87,7 @@ index bb073a2..3f9447b 100644
  .nf
  From: rancid 
  To: rancid-shrubbery@shrubbery.net
-@@ -76,8 +77,8 @@ Precedence: bulk
+@@ -76,8 +77,8 @@
  Index: configs/dfw.shrubbery.net
  ===================================================================
  retrieving revision 1.144
@@ -103,7 +98,7 @@ index bb073a2..3f9447b 100644
    !Slot 2/MBUS: hvers 1.1
    !Slot 2/MBUS: software 01.36 (RAM) (ROM version is 01.33)
    !Slot 2/MBUS: 128 Mbytes DRAM, 16384 Kbytes SDRAM
-@@ -92,6 +93,7 @@ diff -u -4 -r1.144 dfw.shrubbery.net
+@@ -92,6 +93,7 @@
    !Slot 7/PCA: part 73-2170-03 rev B0 ver 3, serial CAB024901SI
    !Slot 7/PCA: hvers 1.4
    !Slot 7/MBUS: part 73-2146-06 rev A0 dev 0, serial CAB02060044

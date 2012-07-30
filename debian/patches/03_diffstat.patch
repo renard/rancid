@@ -1,8 +1,10 @@
-diff --git a/bin/control_rancid.in b/bin/control_rancid.in
-index 7aa41e5..d3b018b 100644
+Author: Roland Rosenfeld <roland@debian.org>
+Description: add diffstat output to changes e-mail (Closes: #357218)
+Bug-Debian: http://bugs.debian.org/357218
+
 --- a/bin/control_rancid.in
 +++ b/bin/control_rancid.in
-@@ -576,6 +576,9 @@ if [ -s $TMP.diff ] ; then
+@@ -477,6 +477,9 @@
  	  echo "Subject: $subject"
  	  echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
  	  echo ""

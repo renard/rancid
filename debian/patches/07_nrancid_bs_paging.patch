@@ -1,8 +1,11 @@
-diff --git a/bin/nrancid.in b/bin/nrancid.in
-index 4164084..68361bf 100644
+Author: Vaclav Ovsik <vaclav.ovsik@i.cz>
+Description: Fix "--- more ---" & backspace style paging on netscreen devices.
+ (Closes: #520899)
+Bug-Debian: http://bugs.debian.org/520899
+
 --- a/bin/nrancid.in
 +++ b/bin/nrancid.in
-@@ -173,6 +173,7 @@ sub GetSystem {
+@@ -173,6 +173,7 @@
  
      while (<INPUT>) {
  	tr/\015//d;
@@ -10,7 +13,7 @@ index 4164084..68361bf 100644
  	next if /^\s*$/;
  	last if(/$prompt/);
  	# throw away the pager prompts
-@@ -211,6 +212,7 @@ sub GetConf {
+@@ -213,6 +214,7 @@
      print STDERR "    In GetConf: $_" if ($debug);
      while (<INPUT>) {
  	tr/\015//d;

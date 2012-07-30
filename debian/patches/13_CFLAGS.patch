@@ -1,0 +1,15 @@
+Author: Roland Rosenfeld <roland@debian.org>
+Description: Remove CFLAGS setting from bin/Makefile.{in|am} to allow
+ debhelper to set them for hardening.
+
+--- a/bin/Makefile.am
++++ b/bin/Makefile.am
+@@ -71,7 +71,7 @@
+ #INCLUDES += -I$(top_srcdir)/include
+ 
+ #CFLAGS += -g
+-CFLAGS = -g -O0
++#CFLAGS = -g -O0
+ 
+ YFLAGS = -d
+ #LFLAGS = -i

@@ -1,0 +1,23 @@
+Author: Roland Rosenfeld <roland@debian.org>
+Description: Fix some typos from the man pages.
+
+--- a/man/router.db.5
++++ b/man/router.db.5
+@@ -50,7 +50,7 @@
+ .TP
+ .\".ID 15n
+ .B agm
+-A Cisco Anomoly Guard Module (aka Riverhead).
++A Cisco Anomaly Guard Module (aka Riverhead).
+ Suspect that at some point the UI will become more cisco-like and it
+ can be merged with the IOS rancid module.
+ .TP
+@@ -205,7 +205,7 @@
+ .B [comments]
+ Freeform string to describe the current state of the router.
+ .PP
+-A ``#'' at the begining of a line is a comment; the entire line is
++A ``#'' at the beginning of a line is a comment; the entire line is
+ ignored.
+ .PP
+ If a device is deleted from the 

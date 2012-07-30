@@ -1,8 +1,11 @@
-diff --git a/bin/clogin.in b/bin/clogin.in
-index 634acc6..b7a12ca 100644
+Author: Emre Bastuz <info@emre.de>
+Description: Allow additional option "add login" in .cloginrc to allow login
+ to Cisco PIX via SSH instead of using enable.
+Origin: http://www.shrubbery.net/pipermail/rancid-discuss/2005-August/001159.html
+
 --- a/bin/clogin.in
 +++ b/bin/clogin.in
-@@ -82,6 +82,8 @@ set do_saveconfig 0
+@@ -82,6 +82,8 @@
  set timeoutdflt 45
  #
  set send_human {.4 .4 .7 .3 5}
@@ -10,8 +13,8 @@ index 634acc6..b7a12ca 100644
 +set loginonly 0
  
  # Find the user in the ENV, or use the unix userid.
- if {[ info exists env(CISCO_USER) ]} {
-@@ -554,6 +556,39 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype } {
+ if {[info exists env(CISCO_USER)]} {
+@@ -582,6 +584,39 @@
      return 0
  }
  
@@ -51,9 +54,9 @@ index 634acc6..b7a12ca 100644
  # Enable
  proc do_enable { enauser enapasswd } {
      global do_saveconfig in_proc
-@@ -752,6 +787,13 @@ foreach router [lrange $argv $i end] {
- 	}
-     }
+@@ -752,6 +787,13 @@
+     # Default prompt.
+     set prompt "(>|#| \\(enable\\))"
  
 +    # If a "login" option is used, no "enable" will be required
 +    # look for login option in .cloginrc
@@ -63,13 +66,13 @@ index 634acc6..b7a12ca 100644
 +    }
 +
      # look for noenable option in .cloginrc
-     if { [find noenable $router] != "" } {
+     if { [find noenable $router] == "1" } {
  	set enable 0
-@@ -845,6 +887,17 @@ foreach router [lrange $argv $i end] {
- 	# if login failed or rsh was unsuccessful, move on to the next device
- 	continue
+@@ -874,6 +916,17 @@
+ 	    }
+ 	}
      }
-+    
++
 +    # login required?
 +    if { $loginonly } {
 +       if {[do_login $enauser $enapasswd]} {
@@ -83,7 +86,7 @@ index 634acc6..b7a12ca 100644
      if { $enable } {
  	if {[do_enable $enauser $enapasswd]} {
  	    if { $do_command || $do_script } {
-@@ -854,6 +907,7 @@ foreach router [lrange $argv $i end] {
+@@ -883,6 +936,7 @@
  	    }
  	}
      }

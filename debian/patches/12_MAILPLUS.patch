@@ -1,0 +1,26 @@
+From: GeekSmith <lixo@geeksmith.net>
+Bugs-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/rancid/+bug/909877
+Description: rancid's downreport script sends an email to the configured email
+ address for each router group. After installation, the script should send
+ reports to either "rancid-admin-<groupname>" or "rancid+admin-<groupname>",
+ depending on how the installation was configured. Instead, it sends to
+ "@MAILPLUS@admin-<groupname>".
+ .
+ Looks like configuring/compiling the package doesn't replace the MAILPLUS
+ variable at line 76 in the downreport script found at
+ /var/lib/rancid/downreport.
+Origin: https://launchpadlibrarian.net/88737434/rancid-2.3.6-downreport.patch
+
+--- a/share/Makefile.am
++++ b/share/Makefile.am
+@@ -69,7 +69,9 @@
+ 	-e 's,@prefix\@,$(prefix),g' \
+ 	-e 's,@localstatedir\@,$(localstatedir),g' \
+ 	-e 's,@sysconfdir\@,$(sysconfdir),g' \
+-	-e 's,@pkgdatadir\@,$(pkgdatadir),g'
++	-e 's,@pkgdatadir\@,$(pkgdatadir),g' \
++	-e 's,@ADMINMAILPLUS\@,$(ADMINMAILPLUS),g' \
++	-e 's,@MAILPLUS\@,$(MAILPLUS),g'
+ 
+ downreport: Makefile $(srcdir)/downreport.in
+ 	rm -f downreport downreport.tmp; \
