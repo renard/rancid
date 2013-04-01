@@ -1,4 +1,4 @@
-## Copyright (c) 1997-2010 by Terrapin Communications, Inc.
+## Copyright (c) 1997-2014 by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## This code is derived from software contributed to and maintained by
@@ -34,6 +34,13 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
+##
+## It is the request of the authors, but not a condition of license, that
+## parties packaging or redistributing RANCID NOT distribute altered versions
+## of the etc/rancid.types.base file nor alter how this file is processed nor
+## when in relation to etc/rancid.types.conf.  The goal of this is to help
+## suppress our support costs.  If it becomes a problem, this could become a
+## condition of license.
 # 
 #  The expect login scripts were based on Erik Sherk's gwtn, by permission.
 # 

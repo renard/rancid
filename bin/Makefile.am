@@ -1,70 +1,38 @@
 ## Process this file with automake to produce Makefile.in
 ## A Makefile.in is supplied, in case you do not have automake.
 
-## $Id: Makefile.am 2334 2011-11-17 21:09:37Z heas $
+## $Id: Makefile.am 2798 2014-02-12 18:25:10Z heas $
 ##
-## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
+## Copyright (c) 1997-2013 by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
-## This code is derived from software contributed to and maintained by
-## Terrapin Communications, Inc. by Henry Kilmer, John Heasley, Andrew Partan,
-## Pete Whiting, Austin Schutz, and Andrew Fort.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
-## 1. Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer.
-## 2. Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in the
-##    documentation and/or other materials provided with the distribution.
-## 3. All advertising materials mentioning features or use of this software
-##    must display the following acknowledgement:
-##        This product includes software developed by Terrapin Communications,
-##        Inc. and its contributors for RANCID.
-## 4. Neither the name of Terrapin Communications, Inc. nor the names of its
-##    contributors may be used to endorse or promote products derived from
-##    this software without specific prior written permission.
-## 5. It is requested that non-binding fixes and modifications be contributed
-##    back to Terrapin Communications, Inc.
-##
-## THIS SOFTWARE IS PROVIDED BY Terrapin Communications, INC. AND CONTRIBUTORS
-## ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-## TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-## PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COMPANY OR CONTRIBUTORS
-## BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-# 
-#  The expect login scripts were based on Erik Sherk's gwtn, by permission.
-# 
-#  The original looking glass software was written by Ed Kern, provided by
-#  permission and modified beyond recognition.
+## Please see the file COPYING for the text of the license.
 
 #AUTOMAKE_OPTIONS=foreign no-dependencies
 AUTOMAKE_OPTIONS=foreign
 
-bin_PROGRAMS = hpuifilter
-bin_SCRIPTS = agmrancid alogin arancid arrancid avologin avorancid blogin \
-	brancid cat5rancid clogin control_rancid cssrancid elogin erancid \
-	f5rancid f10rancid flogin fnlogin fnrancid francid hlogin hrancid \
-	htlogin htrancid jerancid jlogin jrancid mrancid mrvlogin mrvrancid \
-	mtlogin mtrancid nlogin nrancid nslogin nsrancid nxrancid par prancid \
-	rancid-fe rancid rivlogin rivrancid rrancid srancid tlogin tntlogin \
-	tntrancid trancid xrancid xrrancid zrancid
+bin_PROGRAMS = hpuifilter par
+bin_SCRIPTS = agmrancid alogin anlogin anrancid arancid arrancid atrancid \
+	avologin avorancid blogin brancid cat5rancid clogin complogin \
+	control_rancid cssrancid dllogin elogin erancid f5rancid f10rancid \
+	flogin fnlogin fnrancid hlogin hrancid htlogin \
+	htrancid jerancid jlogin mrancid mrvlogin mtlogin mtrancid \
+	nlogin nrancid nslogin nsrancid nxrancid prancid rancid rivlogin \
+	rivrancid rrancid srancid tlogin tntlogin tntrancid trancid xilogin \
+	xirancid xrancid zrancid
+# XXX hack for the rancid to get pkglibdir, see corresponding XXX below
+bin_in = rancid.in
 
-bin_SCRIPTS += lg.cgi lgform.cgi rancid-cvs rancid-run
-EXTRA_DIST= lg.cgi.in lgform.cgi.in rancid-cvs.in rancid-run.in
+bin_SCRIPTS += lg.cgi lgform.cgi rancid-cvs rancid-fe rancid-run
+EXTRA_DIST= lg.cgi.in lgform.cgi.in rancid-cvs.in rancid-fe.in rancid-run.in \
+	$(bin_in)
 #dist_bin_SCRIPTS= $(bin_SCRIPTS:%=%.in)
 
-CLEANFILES= lg.cgi lgform.cgi rancid-cvs rancid-run
+CLEANFILES= lg.cgi lgform.cgi rancid-cvs rancid-fe rancid-run
 #CLEANFILES= $(bin_SCRIPTS)
 
 hpuifilter_SOURCES = hpuifilter.c
+par_SOURCES = par.c
 
 #CPPFLAGS += @PG_CPPFLAGS@
 #INCLUDES += -I$(top_srcdir)/include @PG_CPPFLAGS@
@@ -91,6 +59,7 @@ YFLAGS = -d
 auto_edit = sed \
 	-e 's,@prefix\@,$(prefix),g' \
 	-e 's,@localstatedir\@,$(localstatedir),g' \
+	-e 's,@pkglibdir\@,$(pkglibdir),g' \
 	-e 's,@sysconfdir\@,$(sysconfdir),g' \
 	-e 's,@EXPECT_PATH\@,$(EXPECT_PATH),g' \
 	-e 's,@PERLV\@,$(PERLV),g' \
@@ -102,6 +71,18 @@ auto_edit = sed \
 	-e 's,@SVN_FSTYPE\@,$(SVN_FSTYPE),g' \
 	-e 's,@VERSION\@,$(VERSION),g' \
 	-e 's,@COPYYEARS\@,$(COPYYEARS),g'
+
+# XXX this is the generic version for the rest of bin_scripts that comes from
+#     configure.in now.  perhaps change to use this.
+#$(bin_SCRIPTS): Makefile $(top_builddir)/config.status
+$(bin_in:%.in=%): Makefile $(top_builddir)/config.status
+	rm -f $@ $@.tmp; \
+	$(auto_edit) $(srcdir)/$@.in >$@.tmp; \
+	chmod +x $@.tmp; \
+	mv $@.tmp $@
+# XXX there must be a better way to produce these dependencies, perhaps in
+#     configure.
+rancid: $(srcdir)/rancid.in
 
 lg.cgi: Makefile $(srcdir)/lg.cgi.in
 	rm -f lg.cgi lg.cgi.tmp; \
@@ -120,6 +101,12 @@ rancid-cvs: Makefile $(srcdir)/rancid-cvs.in
 	$(auto_edit) $(srcdir)/rancid-cvs.in >rancid-cvs.tmp; \
 	chmod +x rancid-cvs.tmp; \
 	mv rancid-cvs.tmp rancid-cvs
+
+rancid-fe: Makefile $(srcdir)/rancid-fe.in
+	rm -f rancid-fe rancid-fe.tmp; \
+	$(auto_edit) $(srcdir)/rancid-fe.in >rancid-fe.tmp; \
+	chmod +x rancid-fe.tmp; \
+	mv rancid-fe.tmp rancid-fe
 
 rancid-run: Makefile $(srcdir)/rancid-run.in
 	rm -f rancid-run rancid-run.tmp; \

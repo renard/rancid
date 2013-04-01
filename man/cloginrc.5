@@ -1,8 +1,8 @@
 .\"
-.\" $Id: cloginrc.5 2139 2010-02-10 19:29:27Z heas $
+.\" $Id: cloginrc.5 2762 2013-12-26 20:48:28Z heas $
 .\"
 .hys 50
-.TH "cloginrc" "5" "9 February 2009"
+.TH "cloginrc" "5" "23 December 2013"
 .SH NAME
  \.cloginrc \- clogin configuration file
 .SH DESCRIPTION
@@ -129,6 +129,12 @@ Example: add enableprompt rc*.example.net {"\\[Ee]nter\\ the\\ enable\\ password
 Default: "\\[Pp]assword:"
 .\"
 .TP
+.B add enablecmd <router name glob> {<enable command>}
+.\"
+This defines the command on the device used to enter enabled or super-user
+mode.
+For example, in Cisco IOS the command is "enable".
+.TP
 .B add enauser <router name glob> {<username>}
 This is only needed if a device prompts for a username when gaining
 enable privileges and where this username is different from that defined
@@ -144,21 +150,21 @@ Default: your default identity file.  see ssh(1).
 .TP
 .B add method <router name glob> {ssh} [{...}]
 Defines, in order, the connection methods to use for a device from the
-set {ssh, telnet, rsh}.  Method telnet may have a suffix, indicating an
-alternate TCP port, of the form ":port".
+set {ssh, telnet, rsh}.  Method ssh and telnet may have a suffix, indicating
+an alternate TCP port, of the form ":port".
 .sp
 Note: Different versions of telnet treat the specification of a
 port differently.  In particular, BSD derived telnets do not do
 option negotiation when a port is given.  Some devices, Extreme
 switches for example, have undesirable telnet default options such
 as linemode.  In the BSD case, to enable option negotiation when
-specifying a port the method should be "{telnet:-23}" or you should
-add "mode character" to .telnetrc.  See
+specifying a port the method should be "{telnet:-23}" or, better, add
+"mode character" to .telnetrc.  See
 .BR telnet (1)
 for more information on telnet command-line syntax, telnet options,
 and .telnetrc.
 .sp
-Example: add method * {ssh} {telnet:-3000} {rsh}
+Example: add method * {ssh} {telnet:3000} {rsh}
 .sp
 Which would cause
 .IR clogin
@@ -217,6 +223,14 @@ Specifies a vty password, that which is prompted for upon the connection
 to the router.  The last argument is the enable password and need not be
 specified if the device also has a matching noenable or autoenable
 directive or the corresponding command-line options are used.
+.\"
+.TP
+.B add prompt <router name glob> {<regex>}
+Match login prompt, or initial login prompt in the case of some of the login
+scripts.  This is provided only as a work-around for login banners that
+contain forbidden characters that conflict with CLI prompt markers.
+.sp
+Note that not all login scripts support this.
 .\"
 .TP
 .B add sshcmd <router name glob> {<ssh>}

@@ -1,9 +1,9 @@
 #! @PERLV_PATH@
 ##
-## $Id: nsrancid.in 2279 2011-01-31 22:41:00Z heas $
+## $Id: nsrancid.in 2808 2014-03-31 05:21:36Z heas $
 ##
 ## @PACKAGE@ @VERSION@
-## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
+## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## This code is derived from software contributed to and maintained by
@@ -45,10 +45,10 @@
 #
 #  RANCID - Really Awesome New Cisco confIg Differ
 #
-# usage: rancid [-dV] [-l] [-f filename | hostname]
+# usage: nsrancid [-dltCV] [-f filename | hostname]
 #
 use Getopt::Std;
-getopts('dflV');
+getopts('dflt:CV');
 if ($opt_V) {
     print "@PACKAGE@ @VERSION@\n";
     exit(0);
@@ -66,7 +66,7 @@ my($aclsort) = ("ipsort");		# ACL sorting mode
 my($filter_commstr);			# SNMP community string filtering
 my($filter_pwds);			# password filtering mode
 
-$prompt = "netscaler#";
+$prompt = ">";
 
 # This routine is used to print out the router configuration
 sub ProcessHistory {
@@ -174,12 +174,14 @@ sub ShowConfig {
 
     while (<INPUT>) {
 	tr/\015//d;
+	last if (/ Done$/);
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	next if (/^Reading configuration information/);
 	next if (/^Can\'t find object or class named \"\-all\"\s*$/);
 	next if (/lock-address .*$/);
 	next if (/^\# *uptime +\d+\s*$/);
+	next if (/^\# last modified/i);
 	if (/community label /) {
 	    if ($filter_commstr) {
 		$_ =~ s/community label .*$/community label <removed>/;
@@ -189,7 +191,7 @@ sub ShowConfig {
 	ProcessHistory("","","","$_");
     }
 
-    if (/exit$/) {
+    if (/ Done$/) {
 	$found_end = 1;
 	$clean_run = 1;
 	return(1);
@@ -209,9 +211,6 @@ sub RunCommand {
     return(0)
 }
 
-# dummy function
-sub DoNothing {print STDOUT;}
-
 # Main
 @commandtable = (
 	{'show ns ns.conf'	=> 'ShowConfig'},
@@ -220,8 +219,9 @@ sub DoNothing {print STDOUT;}
 # commands to the subroutine and track commands that have been completed.
 @commands = map(keys(%$_), @commandtable);
 %commands = map(%$_, @commandtable);
+$commandcnt = scalar(keys %commands);
 
-$cisco_cmds=join(";",@commands);
+$commandstr=join(";",@commands);
 $cmds_regexp = join("|", map quotemeta($_), @commands);
 
 if (length($host) == 0) {
@@ -233,6 +233,10 @@ if (length($host) == 0) {
 	exit(1);
     }
 }
+if ($opt_C) {
+    print "nslogin -t $timeo -c\'$commandstr\' $host\n";
+    exit(0);
+}
 open(OUTPUT,">$host.new") || die "Can't open $host.new for writing: $!\n";
 select(OUTPUT);
 # make OUTPUT unbuffered if debugging
@@ -243,13 +247,13 @@ if ($file) {
     print STDOUT "opening file $host\n" if ($log);
     open(INPUT,"<$host") || die "open failed for $host: $!\n";
 } else {
-    print STDERR "executing nslogin -t $timeo -c\"$cisco_cmds\" $host\n" if ($debug);
-    print STDOUT "executing nslogin -t $timeo -c\"$cisco_cmds\" $host\n" if ($log);
+    print STDERR "executing nslogin -t $timeo -c\"$commandstr\" $host\n" if ($debug);
+    print STDOUT "executing nslogin -t $timeo -c\"$commandstr\" $host\n" if ($log);
     if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
-	system "nslogin -t $timeo -c \"$cisco_cmds\" $host </dev/null > $host.raw 2>&1" || die "nslogin failed for $host: $!\n";
+	system "nslogin -t $timeo -c \"$commandstr\" $host </dev/null > $host.raw 2>&1" || die "nslogin failed for $host: $!\n";
 	open(INPUT, "< $host.raw") || die "nslogin failed for $host: $!\n";
     } else {
-	open(INPUT,"nslogin -t $timeo -c \"$cisco_cmds\" $host </dev/null |") || die "nslogin failed for $host: $!\n";
+	open(INPUT,"nslogin -t $timeo -c \"$commandstr\" $host </dev/null |") || die "nslogin failed for $host: $!\n";
     }
 }
 
@@ -292,7 +296,7 @@ TOP: while(<INPUT>) {
 	    $clean_run = 0;
 	    last TOP;
 	}
-	$rval = &{$commands{$cmd}};
+	$rval = &{$commands{$cmd}}(*INPUT, *OUTPUT, $cmd);
 	delete($commands{$cmd});
 	if ($rval == -1) {
 	    $clean_run = 0;
@@ -313,7 +317,9 @@ if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
 
 # check for completeness
 if (scalar(%commands) || !$clean_run || !$found_end) {
-    if (scalar(%commands)) {
+    if (scalar(keys %commands) eq $commandcnt) {
+	printf(STDERR "$host: missed cmd(s): all commands\n");
+    } elsif (scalar(%commands)) {
 	printf(STDOUT "$host: missed cmd(s): %s\n", join(',', keys(%commands)));
 	printf(STDERR "$host: missed cmd(s): %s\n", join(',', keys(%commands))) if ($debug);
     }

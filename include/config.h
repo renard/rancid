@@ -1,5 +1,5 @@
 /* include/config.h.  Generated from config.h.in by configure.  */
-/* include/config.h.in.  Generated from configure.in by autoheader.  */
+/* include/config.h.in.  Generated from configure.ac by autoheader.  */
 
 
 #ifndef	CONFIG_H
@@ -25,7 +25,7 @@
 #define HAVE_LIMITS_H 1
 
 /* Define to 1 if you have the <malloc.h> header file. */
-#define HAVE_MALLOC_H 1
+/* #undef HAVE_MALLOC_H */
 
 /* Define to 1 if you have the `memcpy' function. */
 #define HAVE_MEMCPY 1
@@ -115,28 +115,28 @@
 #define HAVE_UNSETENV 1
 
 /* Define to 1 if you have the <util.h> header file. */
-#define HAVE_UTIL_H 1
+/* #undef HAVE_UTIL_H */
+
+/* Name of package */
+#define PACKAGE "rancid"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT ""
+#define PACKAGE_BUGREPORT "rancid@shrubbery.net"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME ""
+#define PACKAGE_NAME "rancid"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING ""
+#define PACKAGE_STRING "rancid 3.0"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME ""
+#define PACKAGE_TARNAME "rancid"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION ""
-
-/* Define to 1 if the C compiler supports function prototypes. */
-#define PROTOTYPES 1
+#define PACKAGE_VERSION "3.0"
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
@@ -144,8 +144,8 @@
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
-/* Define like PROTOTYPES; this can be used by system headers. */
-#define __PROTOTYPES 1
+/* Version number of package */
+#define VERSION "3.0"
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

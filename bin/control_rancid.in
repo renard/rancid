@@ -1,9 +1,9 @@
 #! /bin/sh
 ##
-## $Id: control_rancid.in 2270 2010-12-09 01:21:32Z heas $
+## $Id: control_rancid.in 2738 2013-10-31 23:19:25Z heas $
 ##
 ## @PACKAGE@ @VERSION@
-## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
+## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## This code is derived from software contributed to and maintained by
@@ -45,11 +45,12 @@
 
 # print a usage message to stderr
 pr_usage() {
-    echo "usage: $0 [-V] [-r device_name] [-m mail rcpt] group" >&2;
+    echo "usage: $0 [-V] [-f group_config_file] [-r device_name] [-m mail rcpt] group" >&2;
 }
 
 # command-line options
 # -V print version string
+# -f <group config file name>
 # -m <mail recipients>
 # -r <device name>
 alt_mailrcpt=0
@@ -60,6 +61,16 @@ if [ $# -ge 1 ] ; then
 	-V)
 	    echo "@PACKAGE@ @VERSION@"
 	    exit 0
+	    ;;
+	-f)
+	    shift
+	    # next arg is the alternate config file name
+	    ENVFILE="$1"
+	    if [ -z $ENVFILE ]; then
+		pr_usage
+		exit 1
+	    fi
+	    shift
 	    ;;
 	-m)
 	    shift
@@ -105,6 +116,12 @@ else
 fi
 DIR=$BASEDIR/$GROUP
 TMP=${TMPDIR:=/tmp}/rancid.$GROUP.$$
+if [ -z "$ENVFILE" ] ; then
+    ENVFILE="$DIR/rancid.conf"
+fi
+if [ -e "$ENVFILE" ] ; then
+    . $ENVFILE
+fi
 trap 'rm -fr $TMP;' 1 2 15
 
 # disable noclobber
@@ -128,10 +145,10 @@ fi
 
 # Number of things par should run in parallel.
 PAR_COUNT=${PAR_COUNT:-5}
-# Number of times failed collections should be retried.  Minimum 1.
+# Number of times failed collections should be retried.  Minimum 0.
 MAX_ROUNDS=${MAX_ROUNDS:-4}
-if [ $MAX_ROUNDS -lt 1 ] ; then
-    echo "Error: MAX_ROUNDS must be at least 1."
+if [ $MAX_ROUNDS -lt 0 ] ; then
+    echo "Error: MAX_ROUNDS must be at least 0 or greater."
     MAX_ROUNDS=1
 fi
 
@@ -146,7 +163,7 @@ if [ ! -d $DIR ] ; then
 	echo ""
 	echo "$DIR does not exist."
 	echo "Run bin/rancid-cvs $GROUP to make all of the needed directories."
-    ) | sendmail -t
+    ) | sendmail -t $MAILOPTS
     exit 1
 fi
 cd $DIR
@@ -164,6 +181,19 @@ EOF
 	svn propset svn:ignore -F .cvsignore .
 	svn update .
 	svn commit -m 'set svn:ignores' .
+    fi
+fi
+
+# check if there is a rancid.conf and if it needs to be added to the RCS
+if [ -e rancid.conf ] ; then
+    if [ $RCSSYS = svn ] ; then
+	LN=`svn ls rancid.conf | wc -l`
+    else
+	cvs log -rHEAD rancid.conf > /dev/null 2>&1
+	if [ $? -eq 0 ] ; then LN=1; else LN=0; fi
+    fi
+    if [ $LN -eq 0 ] ; then
+	$RCSSYS add rancid.conf
     fi
 fi
 
@@ -187,7 +217,7 @@ if [ ! -f $DIR/router.db ] ; then
 	echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
 	echo ""
 	echo "$DIR/router.db does not exist."
-    ) | sendmail -t
+    ) | sendmail -t $MAILOPTS
     exit 1;
 fi
 
@@ -195,17 +225,17 @@ fi
 cd $DIR
 trap 'rm -fr routers.db routers.all.new routers.down.new routers.up.new \
 	routers.mail routers.added routers.deleted $TMP;' 1 2 15
-sed -e '/^#/d' -e 's/^ *//' -e 's/ *$//' -e 's/ *: */:/g' router.db |
+sed -e '/^#/d' -e 's/^ *//' -e 's/ *$//' -e 's/ *; */;/g' router.db |
 	tr '[A-Z]' '[a-z]' | sort -u > routers.db
-cut -d: -f1,2 routers.db > routers.all.new
+cut -d\; -f1,2 routers.db > routers.all.new
 if [ ! -f routers.all ] ; then touch routers.all; fi
 @DIFF_CMD@ routers.all routers.all.new > /dev/null 2>&1; RALL=$?
-@PERLV@ -F: -ane '{$F[2] =~ s/\s*\$//; ($F[0] =~ tr@A-Z@a-z@, print $_)
+@PERLV@ -F\; -ane '{$F[2] =~ s/\s*\$//; ($F[0] =~ tr@A-Z@a-z@, print $_)
     if ($F[2] !~ /^up$/i);}' routers.db > routers.down.new
 if [ ! -f routers.down ] ; then touch routers.down; fi
 @DIFF_CMD@ routers.down routers.down.new > /dev/null 2>&1; RDOWN=$?
-@PERLV@ -F: -ane '{$F[2] =~ s/\s*\$//; ($F[0] =~ tr@A-Z@a-z@,
-    print "$F[0]:$F[1]\n") if ($F[2] =~ /^up$/i);}' routers.db > routers.up.new
+@PERLV@ -F\; -ane '{$F[2] =~ s/\s*\$//; ($F[0] =~ tr@A-Z@a-z@,
+    print "$F[0];$F[1]\n") if ($F[2] =~ /^up$/i);}' routers.db > routers.up.new
 if [ ! -f routers.up ] ; then touch routers.up; fi
 @DIFF_CMD@ routers.up routers.up.new > /dev/null 2>&1; RUP=$?
 
@@ -273,7 +303,7 @@ if [ $RALL -ne 0 -o $RDOWN -ne 0 -o $RUP -ne 0 ] ; then
 	  echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
 	  echo ""
 	  cat routers.mail
-	) | sendmail -t
+	) | sendmail -t $MAILOPTS
     fi
     rm -f routers.mail
 
@@ -283,7 +313,7 @@ if [ $RALL -ne 0 -o $RDOWN -ne 0 -o $RUP -ne 0 ] ; then
     for router in `comm -13 $DIR/routers.up $DIR/routers.up.new`
     do
 	OFS=$IFS
-	IFS=:
+	IFS=';'
 	set $router
 	IFS=$OFS
 	router=$1
@@ -318,7 +348,7 @@ trap 'rm -fr $TMP;' 1 2 15
 
 cd $DIR/configs
 # check for 'up' routers missing in RCS.  no idea how this happens to some folks
-for router in `cut -d: -f1 ../routers.up` ; do
+for router in `cut -d\; -f1 ../routers.up` ; do
     if [ $RCSSYS = cvs ] ; then
 	cvs status $router | grep -i 'status: unknown' > /dev/null 2>&1
     else
@@ -337,7 +367,7 @@ done
 echo
 # delete configs from RCS for routers not listed in routers.up.
 for router in `find . \( -name \*.new -prune -o -name CVS -prune -o -name .svn -prune \) -o -type f -print | sed -e 's/^.\///'` ; do
-    grep -i "^$router:" ../router.db > /dev/null 2>&1
+    grep -i "^$router\;" ../router.db > /dev/null 2>&1
     if [ $? -eq 1 ] ; then
 	rm -f $router
 	$RCSSYS delete $router
@@ -359,7 +389,7 @@ fi
 if [ "X$device" != "X" ] ; then
     trap 'rm -fr $TMP $DIR/routers.single;' 1 2 15
     devlistfile="$DIR/routers.single"
-    grep -i "^$device:" routers.up > $devlistfile
+    grep -i "^$device\;" routers.up > $devlistfile
     if [ $? -eq 1 ] ; then
 	exit;
     fi
@@ -374,7 +404,7 @@ cd $DIR/configs
 # tailored to the specific installation.
 echo ""
 echo "Trying to get all of the configs."
-par -q -n $PAR_COUNT -c "rancid-fe {}" $devlistfile
+par -q -n $PAR_COUNT -c 'rancid-fe "{}"' $devlistfile
 
 # This section will generate a list of missed routers
 # and try to grab them again.  It will run through
@@ -389,14 +419,14 @@ do
     for router in `cat $devlistfile`
     do
 	OFS=$IFS
-	IFS=':'
+	IFS=';'
 	set $router
 	IFS=$OFS
 	router=$1; mfg=$2
 
 	if [ ! -s $router.new ]
 	then
-	    echo "$router:$mfg" >> $DIR/routers.up.missed
+	    echo "$router;$mfg" >> $DIR/routers.up.missed
 	    rm -f $router.new
 	fi
     done
@@ -404,7 +434,7 @@ do
     if [ -f $DIR/routers.up.missed ] ; then
 	echo "====================================="
 	echo "Getting missed routers: round $round."
-	par -q -n $PAR_COUNT -c "rancid-fe \{}" $DIR/routers.up.missed
+	par -q -n $PAR_COUNT -c 'rancid-fe "{}"' $DIR/routers.up.missed
 	rm -f $DIR/routers.up.missed
 	round=`expr $round + 1`
     else
@@ -419,7 +449,7 @@ echo
 for router in `cat $devlistfile`
 do
     OFS=$IFS
-    IFS=':'
+    IFS=';'
     set $router
     IFS=$OFS
     router=$1;
@@ -472,13 +502,60 @@ fi
 
 # Mail out the diffs (if there are any).
 if [ -s $TMP.diff ] ; then
+    MAXSZ=${MAILSPLIT:=0}
+    if [ $MAXSZ -ne 0 ] ; then
+	BLOCKSIZE=1024; export BLOCKSIZE
+	tmpk=`perl -e "my(@S) = stat(\"$TMP.diff\"); print int(\\$S[7] / 1024);"`
+	unset BLOCKSIZE
+	if [ $tmpk -lt $MAXSZ ] ; then
+	    MAXSZ=0
+	fi
+    fi
+    if [ $MAXSZ -eq 0 ] ; then
 	(
 	  echo "To: $mailrcpt"
 	  echo "Subject: $subject"
 	  echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
 	  echo ""
 	  cat $TMP.diff
-	) | sendmail -t
+	) | sendmail -t $MAILOPTS
+    else
+	CDIR=`pwd`
+	SDIR=${TMPDIR:=/tmp}/rancid.$GROUP.$$.mail
+	error=`mkdir $SDIR`
+	if [ $? -ne 0 ] ; then
+	    echo "Could not create $SDIR directory" >&2
+	    echo $error >&2
+	else
+	    cd $SDIR
+	    split -b${MAXSZ}k $TMP.diff
+	    nfiles=`ls | wc -l | sed -e 's/^ *//' |cut -d' ' -f1`
+	    n=0
+	    dt=`perl -e 'print time();'`
+	    for file in `ls`; do
+		n=`expr $n + 1`
+		MSGID="<$dt.RANCID$GROUP$$${nfiles}${n}@`hostname`>"
+		(
+		echo "To: $mailrcpt"
+		echo "Subject: $n of ${nfiles}: $subject"
+		echo "Message-Id: $MSGID"
+		if [ $n -gt 1 ] ; then
+		    echo "References: $LASTIDS"
+		fi
+		echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
+		echo ""
+		cat $file
+		) | sendmail -t $MAILOPTS
+		LASTIDS="$LASTIDS $MSGID"
+		if [ $n -lt $nfiles ]; then
+		    # this just tries to make the msgs order right in MUAs
+		    sleep 1
+		fi
+	    done
+	    cd $CDIR
+	    rm -rf $SDIR
+	fi
+    fi
 fi
 
 # If any machines have not been reached within the last $OLDTIME
@@ -488,7 +565,7 @@ rm -f $DIR/routers.failed
 if [ "X$OLDTIME" = "X" ] ; then
     OLDTIME=24
 fi
-@PERLV@ -F: -ane "{\$t = (stat(\$F[0]))[9]; print \`ls -ld \$F[0]\`
+@PERLV@ -F\; -ane "{\$t = (stat(\$F[0]))[9]; print \`ls -ld \$F[0]\`
 	if (time() - \$t >= $OLDTIME*60*60);}" $devlistfile | sort -u > $DIR/routers.failed
 if [ -s $DIR/routers.failed ] ; then
 	(
@@ -500,7 +577,7 @@ if [ -s $DIR/routers.failed ] ; then
 	  echo "more than $OLDTIME hours."
 
 	  cat $DIR/routers.failed
-	) | sendmail -t
+	) | sendmail -t $MAILOPTS
 fi
 
 # Cleanup

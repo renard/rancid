@@ -1,18 +1,23 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.13)
-AC_INIT(CHANGES)
 
 dnl	VERSION needs to be updated such that 'make dist' uses the correct
 dnl	filename for the directory name and tarball.
-VERSION=`sed -n 's/.*version.*"\(.*\)".*/\1/p' $srcdir/include/version.h.in|tr -d ' '`
-PACKAGE=`sed -n 's/.*package.*"\(.*\)".*/\1/p' $srcdir/include/version.h.in|tr -d ' '`
+dnl VERSION=`sed -n 's/.*version.*"\(.*\)".*/\1/p' $srcdir/include/version.h.in|tr -d ' '`
+dnl PACKAGE=`sed -n 's/.*package.*"\(.*\)".*/\1/p' $srcdir/include/version.h.in|tr -d ' '`
+VERSION=`$srcdir/configure.vers package_name`
+PACKAGE=`$srcdir/configure.vers package_version`
 AC_SUBST(VERSION)
 AC_SUBST(PACKAGE)
-COPYYEARS="1997-2011"
+AC_INIT(m4_esyscmd(configure.vers package_name),
+	m4_esyscmd(configure.vers package_version),
+	[rancid@shrubbery.net])
+AC_CONFIG_SRCDIR(CHANGES)
+AM_INIT_AUTOMAKE
+COPYYEARS="1997-2014"
 AC_SUBST(COPYYEARS)
 
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, rancid@shrubbery.net)
 
 dnl default install location
 AC_PREFIX_DEFAULT(/usr/local/rancid)
@@ -35,7 +40,6 @@ AC_PROG_MAKE_SET()
 
 # compiler specifics
 AC_PROG_CC
-AM_C_PROTOTYPES
 AC_PROG_CPP
 AC_C_CONST
 AC_C_INLINE
@@ -357,6 +361,7 @@ AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(bin/Makefile)
 AC_CONFIG_FILES(etc/Makefile)
 AC_CONFIG_FILES(include/Makefile)
+AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(man/Makefile)
 AC_CONFIG_FILES(share/Makefile)
 AC_CONFIG_FILES(include/version.h)	# this is not a header in the sense of
@@ -447,23 +452,27 @@ extern int		errno;
 ])
 AC_CONFIG_HEADERS(include/config.h)
 
-AC_CONFIG_FILES(bin/control_rancid bin/par bin/rancid-fe, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/control_rancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/agmrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/alogin bin/arancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/anlogin bin/anrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/arrancid, [chmod a+x $ac_file])
+dnl AC_CONFIG_FILES(bin/atrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/avologin bin/avorancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/blogin bin/brancid, [chmod a+x $ac_file])
-AC_CONFIG_FILES(bin/cat5rancid bin/clogin bin/rancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/cat5rancid bin/clogin, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/complogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/cssrancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/dllogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/elogin bin/erancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/f5rancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/f10rancid, [chmod a+x $ac_file])
-AC_CONFIG_FILES(bin/flogin bin/francid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/flogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/fnlogin bin/fnrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/hlogin bin/hrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/htlogin bin/htrancid, [chmod a+x $ac_file])
-AC_CONFIG_FILES(bin/jlogin bin/jrancid bin/jerancid, [chmod a+x $ac_file])
-AC_CONFIG_FILES(bin/mrancid bin/mrvlogin bin/mrvrancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/jlogin bin/jerancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/mrancid bin/mrvlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/mtrancid bin/mtlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/nlogin bin/nrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/nslogin bin/nsrancid, [chmod a+x $ac_file])
@@ -475,8 +484,8 @@ AC_CONFIG_FILES(bin/srancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/tlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/tntlogin bin/tntrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/trancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/xilogin bin/xirancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/xrancid, [chmod a+x $ac_file])
-AC_CONFIG_FILES(bin/xrrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/zrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(share/rtrfilter, [chmod a+x $ac_file])
 

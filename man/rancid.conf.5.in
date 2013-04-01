@@ -1,8 +1,8 @@
 .\"
-.\" $Id: rancid.conf.5.in 2096 2009-06-17 21:49:46Z heas $
+.\" $Id: rancid.conf.5.in 2716 2013-07-26 14:23:08Z heas $
 .\"
 .hys 50
-.TH "rancid.conf" "5" "18 December 2007"
+.TH "rancid.conf" "5" "28 July 2013"
 .SH NAME
 rancid.conf \- rancid environment configuration file
 .SH DESCRIPTION
@@ -144,9 +144,25 @@ Default: Precedence: bulk
 Example: Precedence: bulk\\nX-clamation: beef cake
 .\"
 .TP
+.B MAILOPTS
+Define additional options used to invoke
+.BR sendmail (8).
+By default, this is not set.
+.sp
+Example: MAILOPTS="-f bounces.go.here@example.com"
+.\"
+.TP
+.B MAILSPLIT
+Defines the maximum BODY size of diffs in kilobytes, such that diffs are
+split clunks no larger than N kbytes.
+The minimum is 0, which disables splitting.
+.sp
+Default: 0.
+.\"
+.TP
 .B MAX_ROUNDS
 Defines how many times rancid should retry collection of devices that fail.
-The minimum is 1.
+The minimum is 0.
 .sp
 Default: 4.
 .\"

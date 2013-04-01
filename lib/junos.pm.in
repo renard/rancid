@@ -1,9 +1,9 @@
-#! @PERLV_PATH@
+package junos;
 ##
-## $Id: jrancid.in 2279 2011-01-31 22:41:00Z heas $
+## $Id: junos.pm.in 2804 2014-03-19 00:27:18Z heas $
 ##
 ## @PACKAGE@ @VERSION@
-## Copyright (c) 1997-2008 by Terrapin Communications, Inc.
+## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## This code is derived from software contributed to and maintained by
@@ -40,145 +40,102 @@
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
 # 
-# Amazingly hacked version of Hank's rancid - this one tries to
-# deal with Junipers.
-#
 #  RANCID - Really Awesome New Cisco confIg Differ
 #
-# usage: jrancid [-dV] [-l] [-f filename | hostname]
+#  junos.pm - Juniper JunOS rancid procedures
 #
-use Getopt::Std;
-getopts('dflV');
-if ($opt_V) {
-    print "@PACKAGE@ @VERSION@\n";
-    exit(0);
+
+use 5.005;
+use strict 'vars';
+use warnings;
+require(Exporter);
+our @ISA = qw(Exporter);
+$Exporter::Verbose=1;
+
+#XXX use @VERSION@ when we have a version w/o letters in it
+#XXX use rancid @VERSION@;
+use rancid;
+
+our $ShowChassisSCB;			# Only run ShowChassisSCB() once
+
+@ISA = qw(Exporter rancid main);
+#our @EXPORT = qw($VERSION)
+
+# load-time initialization
+sub import {
+    $timeo = 120;			# jlogin timeout in seconds
+
+    0;
 }
-$debug = $opt_d;
-$log = $opt_l;
-$file = $opt_f;
-$host = $ARGV[0];
 
-$clean_run = 0;
-$found_end = 0;
-$timeo = 120;				# clogin timeout in seconds
+# post-open(collection file) initialization
+sub init {
+    # add content lines and separators
+    ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n#\n");
 
-my(@commandtable, %commands, @commands);# command lists
-my($aclsort) = ("ipsort");		# ACL sorting mode
-my($filter_commstr);			# SNMP community string filtering
-my($filter_pwds);			# password filtering mode
-my($ShowChassisSCB);			# Only run ShowChassisSCB() once
+    0;
+}
 
-# This routine is used to print out the router configuration
-sub ProcessHistory {
-    my($new_hist_tag,$new_command,$command_string,@string) = (@_);
-    if ((($new_hist_tag ne $hist_tag) || ($new_command ne $command))
-	&& scalar(%history)) {
-	print eval "$command \%history";
-	undef %history;
-    }
-    if (($new_hist_tag) && ($new_command) && ($command_string)) {
-	if ($history{$command_string}) {
-	    $history{$command_string} = "$history{$command_string}@string";
-	} else {
-	    $history{$command_string} = "@string";
+# main loop of input of device output
+sub inloop {
+    my($INPUT, $OUTPUT) = @_;
+    my($cmd, $rval);
+
+TOP: while (<$INPUT>) {
+	tr/\015//d;
+	if (/^Error:/) {
+	    print STDOUT ("$host jlogin error: $_");
+	    print STDERR ("$host jlogin error: $_") if ($debug);
+	    $clean_run=0;
+	    last;
 	}
-    } elsif (($new_hist_tag) && ($new_command)) {
-	$history{++$#history} = "@string";
-    } else {
-	print "@string";
+	if (/System shutdown message/) {
+	    print STDOUT ("$host shutdown msg: $_");
+	    print STDERR ("$host shutdown msg: $_") if ($debug);
+	    $clean_run = 0;
+	    last;
+	}
+	if (/error: cli version does not match Managment Daemon/i) {
+	    print STDOUT ("$host mgd version mismatch: $_");
+	    print STDERR ("$host mgd version mismatch: $_") if ($debug);
+	    $clean_run = 0;
+	    last;
+	}
+	while (/>\s*($cmds_regexp)\s*$/) {
+	    $cmd = $1;
+	    if (!defined($prompt)) {
+		$prompt = ($_ =~ /^([^>]+>)/)[0];
+		$prompt =~ s/([][}{)(\\])/\\$1/g;
+		print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
+	    }
+	    print STDERR ("HIT COMMAND:$_") if ($debug);
+	    if (! defined($commands{$cmd})) {
+		print STDERR "$host: found unexpected command - \"$cmd\"\n";
+		$clean_run = 0;
+		last TOP;
+	    }
+	    $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
+	    delete($commands{$cmd});
+	    if ($rval == -1) {
+		$clean_run = 0;
+		last TOP;
+	    }
+	}
+	if (/>\s*quit/) {
+	    $clean_run=1;
+	    last;
+	}
     }
-    $hist_tag = $new_hist_tag;
-    $command = $new_command;
-    1;
 }
-
-sub numerically { $a <=> $b; }
-
-# This is a sort routine that will sort numerically on the
-# keys of a hash as if it were a normal array.
-sub keynsort {
-    local(%lines) = @_;
-    local($i) = 0;
-    local(@sorted_lines);
-    foreach $key (sort numerically keys(%lines)) {
-	$sorted_lines[$i] = $lines{$key};
-	$i++;
-    }
-    @sorted_lines;
-}
-
-# This is a sort routine that will sort on the
-# keys of a hash as if it were a normal array.
-sub keysort {
-    local(%lines) = @_;
-    local($i) = 0;
-    local(@sorted_lines);
-    foreach $key (sort keys(%lines)) {
-	$sorted_lines[$i] = $lines{$key};
-	$i++;
-    }
-    @sorted_lines;
-}
-
-# This is a sort routine that will sort on the
-# values of a hash as if it were a normal array.
-sub valsort{
-    local(%lines) = @_;
-    local($i) = 0;
-    local(@sorted_lines);
-    foreach $key (sort values %lines) {
-	$sorted_lines[$i] = $key;
-	$i++;
-    }
-    @sorted_lines;
-}
-
-# This is a numerical sort routine (ascending).
-sub numsort {
-    local(%lines) = @_;
-    local($i) = 0;
-    local(@sorted_lines);
-    foreach $num (sort {$a <=> $b} keys %lines) {
-	$sorted_lines[$i] = $lines{$num};
-	$i++;
-    }
-    @sorted_lines;
-}
-
-# This is a sort routine that will sort on the
-# ip address when the ip address is anywhere in
-# the strings.
-sub ipsort {
-    local(%lines) = @_;
-    local($i) = 0;
-    local(@sorted_lines);
-    foreach $addr (sort sortbyipaddr keys %lines) {
-	$sorted_lines[$i] = $lines{$addr};
-	$i++;
-    }
-    @sorted_lines;
-}
-
-# These two routines will sort based upon IP addresses
-sub ipaddrval {
-    my(@a) = ($_[0] =~ m#^(\d+)\.(\d+)\.(\d+)\.(\d+)$#);
-    $a[3] + 256 * ($a[2] + 256 * ($a[1] +256 * $a[0]));
-}
-sub sortbyipaddr {
-    &ipaddrval($a) <=> &ipaddrval($b);
-}
-
-###
-### Start of real work
-###
 
 # This routine parses "show chassis clocks"
 sub ShowChassisClocks {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisClocks: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
@@ -200,6 +157,7 @@ sub ShowChassisClocks {
 	} elsif (/^(.+)(\.[0-9]+) MHz/) {
 	    # filter for T series
 	    my($leadlen) = length($1);
+	    my($x);
 	    $x = sprintf(" MHz%".length($2)."s", " ");
 	    substr($_, $leadlen, length($2)+4, $x);
 	}
@@ -215,11 +173,12 @@ sub ShowChassisClocks {
 
 # This routine parses "show chassis environment"
 sub ShowChassisEnvironment {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisEnvironment: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	return 1 if (/^aborted!/i);
@@ -240,6 +199,8 @@ sub ShowChassisEnvironment {
 		ProcessHistory("","","","# $1\n") && next;
 	/(^.*\S)\s+ Spinning at .*$/ &&
 		ProcessHistory("","","","# $1\n") && next;
+	/(^.*\S)\s+ \d+ RPM$/ &&
+		ProcessHistory("","","","# $1\n") && next;
 	/(^.*\S)\s+Measurement/ &&
 		ProcessHistory("","","","# $1\n") && next;
 	ProcessHistory("","","","# $_");
@@ -249,11 +210,12 @@ sub ShowChassisEnvironment {
 
 # This routine parses "show chassis firmware"
 sub ShowChassisFirmware {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisFirmware: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	return 1 if (/^aborted!/i);
@@ -274,11 +236,12 @@ sub ShowChassisFirmware {
 
 # This routine parses "show chassis fpc detail"
 sub ShowChassisFpcDetail {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisFpcDetail: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	return 1 if (/^aborted!/i);
@@ -302,11 +265,12 @@ sub ShowChassisFpcDetail {
 
 # This routine parses "show chassis hardware"
 sub ShowChassisHardware {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisHardware: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	return 1 if (/^aborted!/i);
@@ -328,11 +292,12 @@ sub ShowChassisHardware {
 # This routine parses "show chassis routing-engine"
 # Most output is ignored.
 sub ShowChassisRoutingEngine {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisRoutingEngine: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
@@ -361,17 +326,18 @@ sub ShowChassisRoutingEngine {
 # chassis scb", "show chassis sfm detail", and "show chassis ssb".
 # Only do this routine once.
 sub ShowChassisSCB {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisSCB: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
 	next if (/^\{(master|backup)(:\d+)?\}/);
 
-	return(0) if ($ShowChassisSCB);
+	return(0) if ($junos::ShowChassisSCB);
 	/error: the chassis subsystem is not running/ && return(-1);
 	/Couldn\'t initiate connection/ && return(-1);
 	/Unrecognized command/ && return(1);
@@ -394,11 +360,12 @@ sub ShowChassisSCB {
 
 # This routine parses "show chassis alarms"
 sub ShowChassisAlarms {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisAlarms: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
@@ -416,11 +383,12 @@ sub ShowChassisAlarms {
 
 # This routine parses "show system autoinstallation status"
 sub ShowSystemAutoinstall {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowSystemAutoinstall: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
@@ -437,11 +405,12 @@ sub ShowSystemAutoinstall {
 }
 
 sub ShowSystemCoreDumps {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowSystemCoreDumps: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 
@@ -449,7 +418,7 @@ sub ShowSystemCoreDumps {
 	/command is not valid/ && return(1);
 	/^\s+\^/ && return(1);
 	/syntax error/ && return(1);
-	/^JUNOS / && <INPUT> && next;
+	/^JUNOS / && <$INPUT> && next;
 	/No such file or directory$/ && next;
 
 	ProcessHistory("","","","# $_");
@@ -459,15 +428,28 @@ sub ShowSystemCoreDumps {
 
 # This routine parses "show system license"
 sub ShowSystemLicense {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowSystemLicense: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
 	next if (/^\{(master|backup)(:\d+)?\}/);
+
+	# licenses used changes constantly.  distill it to a percentage.
+	if (/^(\s+scale-subscriber)(\s+)(\d+)(\s+\d+)(.*$)/) {
+	    my($a, $sp, $used, $avail, $rem) = ($1, $2, $3, $4, $');
+	    my($spl, $usedl) = (length($sp), length($used));
+	    my($pcnt) = int(($used + 0.0) / ($avail + 0.0) * 100);
+	    my($pcntl) = length($pcnt) + 1;
+	    $spl = $spl + $usedl - $pcntl;
+
+	    my($fmt) = "%s%-" . $spl . "s%d%%%s%s";
+	    $_ = sprintf($fmt, $a, "", $pcnt, $avail, $rem);
+	}
 
 	/Unrecognized command/ && return(1);
 	/command is not valid/ && return(1);
@@ -481,11 +463,12 @@ sub ShowSystemLicense {
 
 # This routine parses "show system license keys"
 sub ShowSystemLicenseKeys {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowSystemLicenseKeys: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
@@ -503,11 +486,12 @@ sub ShowSystemLicenseKeys {
 
 # This routine parses "show system boot-messages"
 sub ShowSystemBootMessages {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowSystemBootMessages: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^system (shutdown message from|going down )/i);
@@ -518,7 +502,7 @@ sub ShowSystemBootMessages {
 	/^\s+\^/ && return(1);
 	/syntax error/ && return(1);
 
-	/^JUNOS / && <INPUT> && next;
+	/^JUNOS / && <$INPUT> && next;
 	/^Timecounter "TSC" / && next;
 	/^real memory / && next;
 	/^avail memory / && next;
@@ -530,16 +514,18 @@ sub ShowSystemBootMessages {
 
 # This routine parses "show version"
 sub ShowVersion {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowVersion: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^\s*$/);
 	next if (/^system (shutdown message from|going down )/i);
 	next if (/^\{(master|backup)(:\d+)?\}/);
+	/# error: abnormal / && return(-1);
 
 	/^Juniper Networks is:/ && ProcessHistory("","","","# \n# $_") && next;
 	ProcessHistory("","","","# $_");
@@ -551,13 +537,14 @@ sub ShowVersion {
 
 # This routine parses "show configuration"
 sub ShowConfiguration {
+    my($INPUT, $OUTPUT, $cmd) = @_;
     my($lines) = 0;
     my($snmp) = 0;
     print STDERR "    In ShowConfiguration: $_" if ($debug);
 
     s/^[a-z]+@//;
     ProcessHistory("","","","# $_");
-    while (<INPUT>) {
+    while (<$INPUT>) {
 	tr/\015//d;
 	next if (/^\s*$/);
 	# end of config - hopefully.  juniper does not have a reliable
@@ -568,6 +555,7 @@ sub ShowConfiguration {
 	}
 	next if (/^system (shutdown message from|going down )/i);
 	next if (/^\{(master|backup)(:\d+)?\}/);
+	next if (/^\{(primary|secondary)(:\d+)?\}/);
 	$lines++;
 
 	/^database header mismatch: / && return(-1);
@@ -600,7 +588,7 @@ sub ShowConfiguration {
 	    ProcessHistory("","","","$_");
 	    next;
 	}
-	if (/^(.*\ssecret )[^ ;]+/ && $filter_pwds >= 1) {
+	if (/^(.*\s(secret|simple-password) )[^ ;]+/ && $filter_pwds >= 1) {
 	    ProcessHistory("","","","#$1<removed>$'");
 	    next;
 	}
@@ -628,163 +616,4 @@ sub ShowConfiguration {
     return(0);
 }
 
-###
-### End of real work
-###
-
-# dummy function
-sub DoNothing {print STDOUT;}
-
-# Main
-@commandtable = (
-	{'show chassis clocks'		=> 'ShowChassisClocks'},
-	{'show chassis environment'	=> 'ShowChassisEnvironment'},
-	{'show chassis firmware'	=> 'ShowChassisFirmware'},
-	{'show chassis fpc detail'	=> 'ShowChassisFpcDetail'},
-	{'show chassis hardware detail'	=> 'ShowChassisHardware'},
-	{'show chassis routing-engine'	=> 'ShowChassisRoutingEngine'},
-	{'show chassis scb'		=> 'ShowChassisSCB'},
-	{'show chassis sfm detail'	=> 'ShowChassisSCB'},
-	{'show chassis ssb'		=> 'ShowChassisSCB'},
-	{'show chassis feb detail'	=> 'ShowChassisSCB'},
-	{'show chassis feb'		=> 'ShowChassisSCB'},
-	{'show chassis cfeb'		=> 'ShowChassisSCB'},
-	{'show chassis alarms'		=> 'ShowChassisAlarms'},
-#	{'show system autoinstallation status' => 'ShowSystemAutoinstall'},
-	{'show system license'		=> 'ShowSystemLicense'},
-#	{'show system license keys'	=> 'ShowSystemLicenseKeys'},
-	{'show system boot-messages'	=> 'ShowSystemBootMessages'},
-	{'show system core-dumps'	=> 'ShowSystemCoreDumps'},
-	{'show version detail'		=> 'ShowVersion'},
-	{'show configuration'		=> 'ShowConfiguration'}
-);
-# Use an array to preserve the order of the commands and a hash for mapping
-# commands to the subroutine and track commands that have been completed.
-@commands = map(keys(%$_), @commandtable);
-%commands = map(%$_, @commandtable);
-
-$jnx_commands=join(";",@commands);
-$cmds_regexp = join("|", map quotemeta($_), @commands);
-
-if (length($host) == 0) {
-    if ($file) {
-	print(STDERR "Too few arguments: file name required\n");
-	exit(1);
-    } else {
-	print(STDERR "Too few arguments: host name required\n");
-	exit(1);
-    }
-}
-open(OUTPUT,">$host.new") || die "Can't open $host.new for writing: $!\n";
-select(OUTPUT);
-# make OUTPUT unbuffered
-if ($debug) { $| = 1; }
-
-if ($file) {
-    print STDERR "opening file $host\n" if ($debug);
-    print STDOUT "opening file $host\n" if ($log);
-    open(INPUT,"< $host") || die "open failed for $host: $!\n";
-} else {
-    print(STDERR "executing echo jlogin -t $timeo -c\"$jnx_commands\" $host\n") if ($debug);
-    print(STDOUT "executing echo jlogin -t $timeo -c\"$jnx_commands\" $host\n") if ($debug);
-
-    if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
-	system "jlogin -t $timeo -c \"$jnx_commands\" $host </dev/null > $host.raw" || die "jlogin failed for $host: $!\n";
-	open(INPUT, "< $host.raw") || die "jlogin failed for $host: $!\n";
-    } else {
-	open(INPUT,"jlogin -t $timeo -c \"$jnx_commands\" $host </dev/null |") || die "jlogin failed for $host: $!\n";
-    }
-
-}
-
-# determine ACL sorting mode
-if ($ENV{"ACLSORT"} =~ /no/i) {
-    $aclsort = "";
-}
-# determine community string filtering mode
-if (defined($ENV{"NOCOMMSTR"}) &&
-    ($ENV{"NOCOMMSTR"} =~ /yes/i || $ENV{"NOCOMMSTR"} =~ /^$/)) {
-    $filter_commstr = 1;
-} else {
-    $filter_commstr = 0;
-}
-# determine password filtering mode
-if ($ENV{"FILTER_PWDS"} =~ /no/i) {
-    $filter_pwds = 0;
-} elsif ($ENV{"FILTER_PWDS"} =~ /all/i) {
-    $filter_pwds = 2;
-} else {
-    $filter_pwds = 1;
-}
-
-ProcessHistory("","","","# RANCID-CONTENT-TYPE: juniper\n#\n");
-TOP: while (<INPUT>) {
-    tr/\015//d;
-    if (/^Error:/) {
-	print STDOUT ("$host jlogin error: $_");
-	print STDERR ("$host jlogin error: $_") if ($debug);
-	$clean_run=0;
-	last;
-    }
-    if (/System shutdown message/) {
-	print STDOUT ("$host shutdown msg: $_");
-	print STDERR ("$host shutdown msg: $_") if ($debug);
-	$clean_run = 0;
-	last;
-    }
-    if (/error: cli version does not match Managment Daemon/i) {
-	print STDOUT ("$host mgd version mismatch: $_");
-	print STDERR ("$host mgd version mismatch: $_") if ($debug);
-	$clean_run = 0;
-	last;
-    }
-    while (/>\s*($cmds_regexp)\s*$/) {
-	$cmd = $1;
-	if (!defined($prompt)) {
-	    $prompt = ($_ =~ /^([^>]+>)/)[0];
-	    $prompt =~ s/([][}{)(\\])/\\$1/g;
-	    print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
-	}
-	print STDERR ("HIT COMMAND:$_") if ($debug);
-	if (! defined($commands{$cmd})) {
-	    print STDERR "$host: found unexpected command - \"$cmd\"\n";
-	    $clean_run = 0;
-	    last TOP;
-	}
-	$rval = &{$commands{$cmd}};
-	delete($commands{$cmd});
-	if ($rval == -1) {
-	    $clean_run = 0;
-	    last TOP;
-	}
-    }
-    if (/>\s*quit/) {
-	$clean_run=1;
-	last;
-    }
-}
-print STDOUT "Done jlogin: $_\n" if ($log);
-# Flush History
-ProcessHistory("","","","");
-# Cleanup
-close(INPUT);
-close(OUTPUT);
-
-if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
-    unlink("$host.raw") if (! $debug);
-}
-
-# check for completeness
-$commands = join(", ", keys(%commands));
-if (scalar(%commands) || !$clean_run || !$found_end) {
-    if (scalar(%commands)) {
-	printf(STDOUT "$host: missed cmd(s): %s\n", join(',', keys(%commands)));
-	printf(STDERR "$host: missed cmd(s): %s\n", join(',', keys(%commands))) if ($debug);
-    }
-    if (!$clean_run || !$found_end) {
-	print STDOUT "$host: End of run not found\n";
-	print STDERR "$host: End of run not found\n" if ($debug);
-	system("/usr/bin/tail -1 $host.new");
-    }
-    unlink "$host.new" if (! $debug);
-}
+1;

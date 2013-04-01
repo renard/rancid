@@ -2,6 +2,9 @@ Rancid is a "Really Awesome New Cisco confIg Differ" developed to
 maintain CVS controlled copies of router configs.
 
 *** The Following Information is Very Important ****
+Rancid 3.0 converts several device scripts (the remaining will follow) to
+libraries used by the single script, named rancid, to parse device output.
+
 Rancid 2.3 introduces a new directory layout.  It has been changed to more
 closely follow the standard path hierarchy, which is defined by the FHS
 standard and autoconf, and/or make these locations more easily configurable
@@ -30,6 +33,8 @@ cloginrc.sample	TCL commands to set passwords, usernames etc. used by clogin
 etc/
 	lg.conf.sample		Sample Looking Glass configuration
 	rancid.conf.sample	Sample RANCID configuration
+	rancid.types.base	RANCID default device type configuration
+	rancid.types.conf	RANCID user-defined device type configuration
 bin/
 	clogin.in	Expect script that logs into routers and either presents
 			an interactive shell, runs a set of commands, or runs
@@ -39,13 +44,14 @@ bin/
 			Builds router list, calls rancid on each router and
 			handles cvs routines.
 	hpuifilter.c	HP procurve login filter - see hlogin(1).
-	par.in		Parallel processing of commands - any commands.
+	par.c		Parallel processing of commands - any commands.
 	rancid-cvs.in	Creates all of the CVS and config directories.
 	rancid-run.in	Script designed to be run from cron.
 	rancid-fe.in	Chooses between rancid/[abefhjrx]rancid/cat5rancid.
 	rancid.in	Runs commands on cisco routers and processes the output.
 
 	agmrancid.in	Version of rancid.in for Cisco Anomaly Guard Module (AGM)
+	anrancid.in	Version of rancid.in for Arbor Networks appliances.
 	arancid.in	Version of rancid.in for Alteon switches.
 	brancid.in	Version of rancid.in for baynet/nortel routers.
 	cat5rancid.in	Version of rancid.in for Cisco Catalyst switches.
@@ -58,8 +64,8 @@ bin/
 	hrancid.in	Version of rancid.in for HP Procurve switches.
 	htrancid.in	Version of rancid.in for Hitatchi routers.
 	jerancid.in	Version of rancid.in for Juniper E-series routers.
-	jrancid.in	Version of rancid.in for Juniper routers.
 	mrancid.in	Version of rancid.in for MRT daemons.
+	mtrancid.in	Version of rancid.in for Microtik routers.
 	nrancid.in	Version of rancid.in for Netscreen firewalls.
 	nsrancid.in	Version of rancid.in for Netscalars.
 	prancid.in	Version of rancid.in for Procket routers.
@@ -67,6 +73,7 @@ bin/
 	rrancid.in	Version of rancid.in for Redback routers.
 	srancid.in	Version of rancid.in for SMC switches.
 	tntrancid.in	Version of rancid.in for TNT access servers.
+	xirancid.in	Version of rancid.in for Xirrus arrays.
 	xrancid.in	Version of rancid.in for Extreme switches.
 	zrancid.in	Version of rancid.in for Zebra routers.
 
@@ -78,10 +85,12 @@ bin/
 	hlogin.in	Version of clogin.in for HP procurve switches.
 	htlogin.in	Version of clogin.in for Hitatchi routers.
 	jlogin.in	Version of clogin.in for Juniper routers.
+	mtlogin.in	Version of clogin.in for Microtik routers.
 	nlogin.in	Version of clogin.in for Netscreen firewalls.
 	nslogin.in	Version of clogin.in for Netscalars.
 	rivlogin.in	Version of clogin.in for Riverstone routers.
 	tntlogin.in	Version of clogin.in for TNT access servers.
+	xilogin.in	Version of clogin.in for Xirrus arrays.
 man/		man pages
 share/		Readmes, samples, utilities, contribs, etc
 include/	Include files and rancid version.h
@@ -209,12 +218,12 @@ Quick Installation Guide (an example):
    IOS) code.
 
    e.g.: <localstatedir>/<group>/router.db:
-	cisco-router.domain.com:cisco:up
-	adc-mux.domain.com:ezt3:up
-	foundry-switch-router.domain.com:foundry:up
-	juniper-router.domain.com:juniper:up
-	redback-dsl-router.domain.com:redback:down
-	extreme-switch.domain.com:extreme:down
+	cisco-router.domain.com;cisco;up
+	adc-mux.domain.com;ezt3;up
+	foundry-switch-router.domain.com;foundry;up
+	juniper-router.domain.com;juniper;up
+	redback-dsl-router.domain.com;redback;down
+	extreme-switch.domain.com;extreme;down
 
 9) For first-time users or new installations, run bin/rancid-run (with no
    arguments) and check the resulting log file(s) (in logs/*) for errors.
